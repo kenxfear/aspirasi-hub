@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Download, Search, MessageSquare } from "lucide-react";
+import { LogOut, Download, Search, MessageSquare, Users, ShieldCheck } from "lucide-react";
 import AspirationCard from "@/components/AspirationCard";
 import AspirationStats from "@/components/AspirationStats";
+import { AdminUserManagement } from "@/components/AdminUserManagement";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Aspiration {
   id: string;
@@ -32,6 +34,8 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>("");
+  const [showSuperAdminPanel, setShowSuperAdminPanel] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -62,6 +66,7 @@ const AdminDashboard = () => {
     }
 
     setUser(user);
+    setUserRole(roles[0].role);
   };
 
   const fetchAspirations = async () => {
@@ -158,14 +163,36 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <ThemeToggle />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Dashboard Admin</h1>
-            <p className="text-muted-foreground">Kelola aspirasi siswa</p>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Dashboard Admin
+              </h1>
+              {userRole === "superadmin" && (
+                <span className="px-3 py-1 rounded-full bg-gradient-to-r from-secondary to-accent text-white text-xs font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  SUPERADMIN
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground">Kelola aspirasi siswa dengan mudah</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {userRole === "superadmin" && (
+              <Button
+                onClick={() => setShowSuperAdminPanel(!showSuperAdminPanel)}
+                variant="outline"
+                className="border-secondary text-secondary hover:bg-secondary hover:text-white"
+              >
+                <Users className="mr-2 h-4 w-4" />
+                {showSuperAdminPanel ? "Lihat Aspirasi" : "Kelola Admin"}
+              </Button>
+            )}
             <Button
               onClick={handleDownloadAll}
               variant="outline"
@@ -185,41 +212,47 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <AspirationStats aspirations={aspirations} />
-
-        <Card className="p-6 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Cari berdasarkan nama, kelas, atau isi aspirasi..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </Card>
-
-        {filteredAspirations.length === 0 ? (
-          <Card className="p-12 text-center">
-            <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Belum Ada Aspirasi</h3>
-            <p className="text-muted-foreground">
-              {searchQuery
-                ? "Tidak ada hasil yang sesuai dengan pencarian"
-                : "Belum ada aspirasi yang masuk"}
-            </p>
-          </Card>
+        {userRole === "superadmin" && showSuperAdminPanel ? (
+          <AdminUserManagement />
         ) : (
-          <div className="space-y-4">
-            {filteredAspirations.map((aspiration, index) => (
-              <AspirationCard
-                key={aspiration.id}
-                aspiration={aspiration}
-                onUpdate={fetchAspirations}
-                delay={index * 0.05}
-              />
-            ))}
-          </div>
+          <>
+            <AspirationStats aspirations={aspirations} />
+
+            <Card className="p-6 mb-6 shadow-lg border-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Cari berdasarkan nama, kelas, atau isi aspirasi..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </Card>
+
+            {filteredAspirations.length === 0 ? (
+              <Card className="p-12 text-center shadow-lg">
+                <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Belum Ada Aspirasi</h3>
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "Tidak ada hasil yang sesuai dengan pencarian"
+                    : "Belum ada aspirasi yang masuk"}
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredAspirations.map((aspiration, index) => (
+                  <AspirationCard
+                    key={aspiration.id}
+                    aspiration={aspiration}
+                    onUpdate={fetchAspirations}
+                    delay={index * 0.05}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
