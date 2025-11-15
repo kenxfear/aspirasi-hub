@@ -160,54 +160,90 @@ const AdminDashboard = () => {
         description: "Mohon tunggu, dokumen sedang dibuat",
       });
 
-      const doc = new jsPDF();
+      const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation for better table fit
       
-      // Header
-      doc.setFontSize(20);
+      // Header with styling
+      doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.text("REKAP ASPIRASI SISWA", 105, 20, { align: "center" });
+      doc.setTextColor(99, 102, 241);
+      doc.text("REKAP ASPIRASI SISWA", doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
       
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text(`Tanggal: ${new Date().toLocaleDateString("id-ID")}`, 105, 28, { align: "center" });
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", {
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+      })}`, doc.internal.pageSize.getWidth() / 2, 28, { align: "center" });
       
-      // Table data
+      doc.text(`Total Aspirasi: ${filteredAspirations.length}`, doc.internal.pageSize.getWidth() / 2, 34, { align: "center" });
+      
+      // Table data - matching Excel format exactly
       const tableData = filteredAspirations.map((asp, index) => [
         (index + 1).toString(),
         asp.student_name,
         asp.student_class || "-",
-        asp.content.length > 100 ? asp.content.substring(0, 100) + "..." : asp.content,
-        new Date(asp.created_at).toLocaleDateString("id-ID"),
-        asp.status,
+        asp.content.substring(0, 150) + (asp.content.length > 150 ? "..." : ""),
+        new Date(asp.created_at).toLocaleDateString("id-ID", { 
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric'
+        }),
+        asp.status.toUpperCase(),
         asp.comments.length.toString()
       ]);
 
       autoTable(doc, {
-        startY: 35,
-        head: [["No", "Nama", "Kelas", "Aspirasi", "Tanggal", "Status", "Komentar"]],
+        startY: 42,
+        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status", "Jumlah Komentar"]],
         body: tableData,
         styles: {
-          fontSize: 8,
-          cellPadding: 3,
+          fontSize: 9,
+          cellPadding: 4,
+          overflow: 'linebreak',
+          cellWidth: 'wrap',
+          minCellHeight: 10,
         },
         headStyles: {
           fillColor: [99, 102, 241],
-          textColor: 255,
+          textColor: [255, 255, 255],
           fontStyle: "bold",
+          halign: 'center',
+          valign: 'middle',
+        },
+        bodyStyles: {
+          textColor: [31, 41, 55],
         },
         alternateRowStyles: {
-          fillColor: [245, 247, 250],
+          fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 70 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 20 },
-          6: { cellWidth: 15 },
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 90 },
+          4: { cellWidth: 28, halign: 'center' },
+          5: { cellWidth: 25, halign: 'center' },
+          6: { cellWidth: 25, halign: 'center' },
         },
+        margin: { left: 14, right: 14 },
       });
+
+      // Footer
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(
+          `Halaman ${i} dari ${pageCount} | Portal Aspirasi Siswa`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
 
       doc.save(`aspirasi-rekap-${new Date().toISOString().split("T")[0]}.pdf`);
 
