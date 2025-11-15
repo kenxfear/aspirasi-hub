@@ -4,10 +4,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, LogIn } from "lucide-react";
+import { ArrowLeft, LogIn, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Email tidak valid"),
@@ -23,6 +32,7 @@ const AdminLogin = () => {
     password: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [superadminPassword, setSuperadminPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +92,93 @@ const AdminLogin = () => {
     }
   };
 
+  const handleSuperadminLogin = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Try to login first
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: "superadmin@aspirasi.com",
+        password: superadminPassword,
+      });
+
+      if (signInError) {
+        // If user doesn't exist and password matches, create the superadmin
+        if (signInError.message.includes("Invalid") && superadminPassword === "faspirasp33.") {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: "superadmin@aspirasi.com",
+            password: superadminPassword,
+            options: {
+              data: {
+                full_name: "Super Admin",
+                username: "superadmin",
+              },
+            },
+          });
+
+          if (signUpError) throw signUpError;
+
+          // Add superadmin role
+          if (signUpData.user) {
+            const { error: roleError } = await supabase
+              .from("user_roles")
+              .insert({
+                user_id: signUpData.user.id,
+                role: "superadmin",
+              });
+
+            if (roleError) throw roleError;
+          }
+
+          toast({
+            title: "Superadmin Dibuat",
+            description: "Akun superadmin berhasil dibuat. Silakan login.",
+          });
+          return;
+        }
+        throw signInError;
+      }
+
+      // Check if user has superadmin role
+      if (signInData.user) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", signInData.user.id);
+
+        if (!roles || !roles.some((r) => r.role === "superadmin")) {
+          await supabase.auth.signOut();
+          throw new Error("Bukan akun superadmin");
+        }
+
+        toast({
+          title: "Login Berhasil",
+          description: "Selamat datang Superadmin!",
+        });
+        navigate("/admin/dashboard");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Gagal",
+        description: error.message || "Password superadmin tidak valid.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-secondary/5 via-background to-accent/5 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <ThemeToggle />
+
+      <div className="w-full max-w-md relative z-10">
         <Button
           variant="ghost"
           className="mb-6 hover:bg-muted"
@@ -94,12 +188,14 @@ const AdminLogin = () => {
           Kembali
         </Button>
 
-        <Card className="p-8 animate-fade-in shadow-lg">
+        <Card className="p-8 animate-fade-in shadow-2xl border-2">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-secondary to-accent mx-auto mb-4 flex items-center justify-center">
-              <LogIn className="w-8 h-8 text-white" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-secondary to-accent mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
+              <LogIn className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold mb-2">Admin Login</h1>
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+              Admin Login
+            </h1>
             <p className="text-muted-foreground">
               Masuk untuk mengelola aspirasi
             </p>
@@ -142,12 +238,49 @@ const AdminLogin = () => {
 
             <Button
               type="submit"
-              className="w-full bg-secondary hover:bg-secondary/90"
+              className="w-full bg-gradient-to-r from-secondary to-accent hover:opacity-90 text-white font-semibold"
               disabled={isLoading}
             >
               {isLoading ? "Memproses..." : "Login"}
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+                  <Shield className="w-3 h-3 mr-1" />
+                  Superadmin Access
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Superadmin Login</DialogTitle>
+                  <DialogDescription>
+                    Masukkan password superadmin untuk akses penuh
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="superadmin-password">Password Superadmin</Label>
+                    <Input
+                      id="superadmin-password"
+                      type="password"
+                      placeholder="Masukkan password superadmin"
+                      value={superadminPassword}
+                      onChange={(e) => setSuperadminPassword(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleSuperadminLogin}
+                    className="w-full bg-gradient-to-r from-secondary to-destructive"
+                  >
+                    Login Superadmin
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </Card>
       </div>
     </div>
