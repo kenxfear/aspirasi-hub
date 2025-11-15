@@ -38,67 +38,84 @@ serve(async (req) => {
       year: 'numeric',
     });
 
-    // Create SVG design for Instagram (1080x1080)
+    // Create beautiful Instagram design (1080x1080) with aspiration content centered
     const svg = `
       <svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:rgb(59, 130, 246);stop-opacity:1" />
-            <stop offset="100%" style="stop-color:rgb(147, 51, 234);stop-opacity:1" />
+            <stop offset="0%" style="stop-color:rgb(99, 102, 241);stop-opacity:1" />
+            <stop offset="50%" style="stop-color:rgb(139, 92, 246);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:rgb(168, 85, 247);stop-opacity:1" />
           </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
           <filter id="shadow">
-            <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.3"/>
+            <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.25"/>
           </filter>
         </defs>
         
-        <!-- Background -->
+        <!-- Background with gradient -->
         <rect width="1080" height="1080" fill="url(#bgGradient)"/>
         
-        <!-- Decorative circles -->
-        <circle cx="100" cy="100" r="150" fill="white" opacity="0.1"/>
-        <circle cx="980" cy="980" r="200" fill="white" opacity="0.1"/>
+        <!-- Decorative elements -->
+        <circle cx="150" cy="150" r="200" fill="white" opacity="0.08"/>
+        <circle cx="930" cy="930" r="250" fill="white" opacity="0.08"/>
+        <circle cx="900" cy="180" r="120" fill="white" opacity="0.05"/>
+        <circle cx="180" cy="900" r="150" fill="white" opacity="0.05"/>
         
         <!-- Main content card -->
-        <rect x="80" y="120" width="920" height="840" rx="30" fill="white" filter="url(#shadow)"/>
+        <rect x="90" y="90" width="900" height="900" rx="40" fill="white" filter="url(#shadow)" opacity="0.98"/>
+        
+        <!-- Decorative top accent -->
+        <rect x="90" y="90" width="900" height="8" rx="40" fill="url(#bgGradient)"/>
         
         <!-- Header -->
-        <text x="540" y="220" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#3B82F6">
-          Portal Aspirasi Siswa
+        <text x="540" y="180" font-family="Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#6366F1" filter="url(#glow)">
+          Aspirasi Siswa
         </text>
         
         <!-- Decorative line -->
-        <line x1="200" y1="250" x2="880" y2="250" stroke="#9333EA" stroke-width="3"/>
+        <line x1="240" y1="210" x2="840" y2="210" stroke="#A78BFA" stroke-width="2" opacity="0.5"/>
         
-        <!-- Student info -->
-        <text x="140" y="320" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#1F2937">
-          📝 ${aspiration.student_name}
-        </text>
-        <text x="140" y="370" font-family="Arial, sans-serif" font-size="24" fill="#6B7280">
-          ${aspiration.student_class || 'Anonim'}
-        </text>
-        <text x="140" y="420" font-family="Arial, sans-serif" font-size="22" fill="#9CA3AF">
-          📅 ${date}
-        </text>
-        
-        <!-- Content box -->
-        <rect x="120" y="460" width="840" height="400" rx="20" fill="#F3F4F6"/>
-        <foreignObject x="140" y="480" width="800" height="360">
+        <!-- Content area with better spacing -->
+        <foreignObject x="140" y="260" width="800" height="640">
           <div xmlns="http://www.w3.org/1999/xhtml" style="
-            font-family: Arial, sans-serif;
-            font-size: 26px;
-            line-height: 1.6;
-            color: #1F2937;
-            padding: 20px;
-            overflow: hidden;
-            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 40px;
           ">
-            ${aspiration.content.length > 300 ? aspiration.content.substring(0, 300) + '...' : aspiration.content}
+            <div style="
+              font-size: 32px;
+              line-height: 1.8;
+              color: #1F2937;
+              font-weight: 500;
+              max-height: 100%;
+              overflow: hidden;
+              display: -webkit-box;
+              -webkit-line-clamp: 12;
+              -webkit-box-orient: vertical;
+            ">
+              "${aspiration.content.length > 400 ? aspiration.content.substring(0, 400) + '...' : aspiration.content}"
+            </div>
           </div>
         </foreignObject>
         
-        <!-- Footer -->
-        <text x="540" y="920" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#6B7280">
-          ✨ Suara Anda Sangat Berarti ✨
+        <!-- Footer info -->
+        <text x="540" y="940" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#6B7280" opacity="0.8">
+          📅 ${date}
+        </text>
+        <text x="540" y="965" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#9CA3AF" opacity="0.7">
+          Portal Aspirasi Siswa
         </text>
       </svg>
     `;
