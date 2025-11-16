@@ -9,7 +9,11 @@ export function ThemeToggle() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Set dark mode as default if no theme is set
+    if (!theme) {
+      setTheme("dark");
+    }
+  }, [theme, setTheme]);
 
   if (!mounted) {
     return null;
