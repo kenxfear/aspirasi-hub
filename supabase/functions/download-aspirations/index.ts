@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resvg } from "https://esm.sh/@resvg/resvg-js@2.6.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -138,11 +139,22 @@ serve(async (req) => {
   </text>
 </svg>`;
 
-      return new Response(svg, {
+      // Convert SVG to PNG using resvg
+      const resvg = new Resvg(svg, {
+        fitTo: {
+          mode: 'width',
+          value: 1080,
+        },
+      });
+      
+      const pngData = resvg.render();
+      const pngBuffer = pngData.asPng();
+
+      return new Response(pngBuffer, {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'image/svg+xml',
-          'Content-Disposition': `attachment; filename="aspirasi-design-${aspiration.student_name.replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}.svg"`,
+          'Content-Type': 'image/png',
+          'Content-Disposition': `attachment; filename="aspirasi-design-${aspiration.student_name.replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}.png"`,
         },
       });
     } else if (type === 'all') {
