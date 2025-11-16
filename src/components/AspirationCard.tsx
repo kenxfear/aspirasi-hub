@@ -112,11 +112,11 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
     try {
       toast({
         title: "Membuat Design...",
-        description: "Mohon tunggu, design sedang dibuat untuk Instagram",
+        description: "Mohon tunggu, design sedang dibuat dengan AI...",
       });
 
-      const response = await supabase.functions.invoke("download-aspirations", {
-        body: { type: "design", aspirationId: aspiration.id },
+      const response = await supabase.functions.invoke("generate-instagram-design", {
+        body: { aspirationId: aspiration.id },
       });
 
       if (response.error) throw response.error;
@@ -125,7 +125,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `aspirasi-design-${aspiration.student_name.replace(/\s/g, '-')}-${new Date(aspiration.created_at).toISOString().split("T")[0]}.png`;
+      a.download = `aspirasi-design-${new Date(aspiration.created_at).toISOString().split("T")[0]}.png`;
       a.click();
       window.URL.revokeObjectURL(url);
 
