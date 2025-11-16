@@ -121,13 +121,47 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
 
       if (response.error) throw response.error;
 
-      const blob = new Blob([response.data], { type: "image/png" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `aspirasi-design-${new Date(aspiration.created_at).toISOString().split("T")[0]}.png`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      // Convert returned SVG to PNG client-side to ensure compatibility on all devices
+      const svgText = typeof response.data === "string"
+        ? response.data
+        : new TextDecoder().decode(response.data as ArrayBuffer);
+
+      const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = window.URL.createObjectURL(svgBlob);
+
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = 1080;
+            canvas.height = 1080;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("Canvas tidak didukung");
+            ctx.drawImage(img, 0, 0, 1080, 1080);
+            canvas.toBlob((pngBlob) => {
+              window.URL.revokeObjectURL(svgUrl);
+              if (!pngBlob) return reject(new Error("Gagal membuat PNG"));
+
+              const downloadUrl = window.URL.createObjectURL(pngBlob);
+              const a = document.createElement("a");
+              a.href = downloadUrl;
+              a.download = `aspirasi-design-${new Date(aspiration.created_at).toISOString().split("T")[0]}.png`;
+              a.click();
+              window.URL.revokeObjectURL(downloadUrl);
+              resolve();
+            }, "image/png");
+          } catch (e) {
+            window.URL.revokeObjectURL(svgUrl);
+            reject(e);
+          }
+        };
+        img.onerror = () => {
+          window.URL.revokeObjectURL(svgUrl);
+          reject(new Error("Gagal memuat gambar SVG"));
+        };
+        img.src = svgUrl;
+      });
 
       toast({
         title: "Download Berhasil! 🎨",
