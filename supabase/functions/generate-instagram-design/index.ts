@@ -90,132 +90,185 @@ serve(async (req) => {
       .map((line, i) => `<tspan x="540" dy="${i === 0 ? 0 : lineHeight}" xml:space="preserve">${line}</tspan>`)
       .join("");
 
-    // Stunning modern Instagram design
+    // Viral-worthy Instagram design with trendy elements
     const svg = `
       <svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Enhanced gradients -->
-          <linearGradient id="mainBg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#667eea" />
-            <stop offset="50%" stop-color="#764ba2" />
-            <stop offset="100%" stop-color="#f093fb" />
+          <!-- Vibrant gradient backgrounds -->
+          <linearGradient id="mainGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#FF6B9D" />
+            <stop offset="25%" stop-color="#C06CEA" />
+            <stop offset="50%" stop-color="#8E54E9" />
+            <stop offset="75%" stop-color="#4776E6" />
+            <stop offset="100%" stop-color="#8E54E9" />
           </linearGradient>
           
-          <linearGradient id="overlay1" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#fa709a" stop-opacity="0.3" />
-            <stop offset="100%" stop-color="#fee140" stop-opacity="0.3" />
+          <linearGradient id="accent1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#FFD89B" />
+            <stop offset="100%" stop-color="#19547B" />
           </linearGradient>
           
-          <linearGradient id="overlay2" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stop-color="#30cfd0" stop-opacity="0.25" />
-            <stop offset="100%" stop-color="#330867" stop-opacity="0.25" />
+          <linearGradient id="accent2" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#FC466B" />
+            <stop offset="100%" stop-color="#3F5EFB" />
           </linearGradient>
           
-          <radialGradient id="glow1" cx="30%" cy="30%">
-            <stop offset="0%" stop-color="#fff" stop-opacity="0.2" />
+          <linearGradient id="textShine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.9" />
+            <stop offset="50%" stop-color="#fff" stop-opacity="1" />
+            <stop offset="100%" stop-color="#fff" stop-opacity="0.9" />
+          </linearGradient>
+          
+          <radialGradient id="spotlight" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.3" />
             <stop offset="100%" stop-color="#fff" stop-opacity="0" />
           </radialGradient>
           
-          <radialGradient id="glow2" cx="70%" cy="70%">
-            <stop offset="0%" stop-color="#fff" stop-opacity="0.15" />
-            <stop offset="100%" stop-color="#fff" stop-opacity="0" />
-          </radialGradient>
-          
-          <filter id="textGlow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <!-- Filters for effects -->
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
             <feMerge>
+              <feMergeNode in="coloredBlur"/>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
           
-          <filter id="softShadow">
-            <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>
+          <filter id="strongGlow">
+            <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
           </filter>
           
-          <!-- Patterns -->
-          <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="10" cy="10" r="1.5" fill="#fff" opacity="0.15"/>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/>
+          </filter>
+          
+          <!-- Pattern untuk texture -->
+          <pattern id="noise" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="#000" opacity="0.03"/>
+            <circle cx="20" cy="20" r="1" fill="#fff" opacity="0.1"/>
+            <circle cx="60" cy="40" r="1" fill="#fff" opacity="0.1"/>
+            <circle cx="40" cy="80" r="1" fill="#fff" opacity="0.1"/>
           </pattern>
         </defs>
 
-        <!-- Layered background -->
-        <rect width="1080" height="1080" fill="url(#mainBg)" />
-        <rect width="1080" height="1080" fill="url(#overlay1)" />
-        <rect width="1080" height="1080" fill="url(#overlay2)" />
-        <rect width="1080" height="1080" fill="url(#dots)" />
+        <!-- Base gradient background -->
+        <rect width="1080" height="1080" fill="url(#mainGrad)" />
         
-        <!-- Glowing orbs -->
-        <circle cx="300" cy="250" r="350" fill="url(#glow1)" />
-        <circle cx="780" cy="830" r="400" fill="url(#glow2)" />
+        <!-- Spotlight effect -->
+        <circle cx="540" cy="540" r="600" fill="url(#spotlight)" />
         
-        <!-- Decorative shapes -->
-        <g opacity="0.08">
-          <circle cx="150" cy="150" r="80" fill="#fff" />
-          <circle cx="930" cy="180" r="100" fill="#fff" />
-          <circle cx="120" cy="900" r="90" fill="#fff" />
-          <circle cx="950" cy="920" r="110" fill="#fff" />
+        <!-- Animated circles (decorative orbs) -->
+        <circle cx="200" cy="200" r="250" fill="#FFD89B" opacity="0.15" filter="url(#glow)" />
+        <circle cx="880" cy="250" r="200" fill="#FC466B" opacity="0.12" filter="url(#glow)" />
+        <circle cx="150" cy="850" r="220" fill="#3F5EFB" opacity="0.13" filter="url(#glow)" />
+        <circle cx="900" cy="880" r="260" fill="#C06CEA" opacity="0.14" filter="url(#glow)" />
+        
+        <!-- Floating stars and sparkles -->
+        <g opacity="0.6" fill="#fff">
+          <!-- Big stars -->
+          <path d="M 250 150 L 255 165 L 270 170 L 255 175 L 250 190 L 245 175 L 230 170 L 245 165 Z" filter="url(#glow)"/>
+          <path d="M 820 200 L 825 215 L 840 220 L 825 225 L 820 240 L 815 225 L 800 220 L 815 215 Z" filter="url(#glow)"/>
+          <path d="M 180 750 L 185 765 L 200 770 L 185 775 L 180 790 L 175 775 L 160 770 L 175 765 Z" filter="url(#glow)"/>
+          <path d="M 900 780 L 905 795 L 920 800 L 905 805 L 900 820 L 895 805 L 880 800 L 895 795 Z" filter="url(#glow)"/>
+          
+          <!-- Small sparkles -->
+          <circle cx="350" cy="280" r="3" filter="url(#glow)"/>
+          <circle cx="730" cy="320" r="2.5" filter="url(#glow)"/>
+          <circle cx="280" cy="600" r="3.5" filter="url(#glow)"/>
+          <circle cx="800" cy="650" r="2" filter="url(#glow)"/>
+          <circle cx="450" cy="850" r="3" filter="url(#glow)"/>
+          <circle cx="650" cy="180" r="2.5" filter="url(#glow)"/>
         </g>
         
-        <!-- Floating particles -->
-        <g opacity="0.4">
-          <circle cx="200" cy="400" r="3" fill="#fff" />
-          <circle cx="850" cy="350" r="4" fill="#fff" />
-          <circle cx="300" cy="700" r="3.5" fill="#fff" />
-          <circle cx="780" cy="650" r="3" fill="#fff" />
-          <circle cx="450" cy="200" r="2.5" fill="#fff" />
-          <circle cx="650" cy="880" r="3.5" fill="#fff" />
-          <circle cx="180" cy="550" r="2" fill="#fff" />
-          <circle cx="920" cy="500" r="3" fill="#fff" />
+        <!-- Geometric shapes floating -->
+        <g opacity="0.12" fill="#fff">
+          <rect x="100" y="400" width="40" height="40" rx="5" transform="rotate(25 120 420)"/>
+          <rect x="940" y="500" width="35" height="35" rx="5" transform="rotate(-20 957 517)"/>
+          <polygon points="200,650 220,680 180,680" filter="url(#glow)"/>
+          <polygon points="880,350 900,380 860,380" filter="url(#glow)"/>
         </g>
         
-        <!-- Content container with glass effect -->
-        <rect x="80" y="${startY - lineHeight - 60}" width="920" height="${contentHeight + 120}" 
-          rx="35" 
-          fill="rgba(255, 255, 255, 0.08)" 
-          stroke="rgba(255, 255, 255, 0.2)" 
+        <!-- Noise texture overlay -->
+        <rect width="1080" height="1080" fill="url(#noise)" />
+        
+        <!-- Main content card with glassmorphism -->
+        <rect x="60" y="${startY - lineHeight - 90}" width="960" height="${contentHeight + 180}" 
+          rx="45" 
+          fill="rgba(255, 255, 255, 0.12)" 
+          stroke="url(#textShine)" 
+          stroke-width="2.5"
+          filter="url(#shadow)" />
+        
+        <!-- Inner glow border -->
+        <rect x="68" y="${startY - lineHeight - 82}" width="944" height="${contentHeight + 164}" 
+          rx="41" 
+          fill="none" 
+          stroke="rgba(255, 255, 255, 0.3)" 
+          stroke-width="1" />
+        
+        <!-- Top decorative bar with gradient -->
+        <rect x="60" y="${startY - lineHeight - 90}" width="960" height="10" rx="45" 
+          fill="url(#accent1)" opacity="0.8" filter="url(#glow)" />
+        
+        <!-- Badge/label decoration -->
+        <rect x="420" y="${startY - lineHeight - 120}" width="240" height="50" rx="25"
+          fill="rgba(255, 255, 255, 0.25)" 
+          stroke="rgba(255, 255, 255, 0.4)" 
           stroke-width="1.5"
-          filter="url(#softShadow)" />
-        
-        <!-- Accent bars -->
-        <rect x="80" y="${startY - lineHeight - 60}" width="920" height="6" rx="35" 
-          fill="rgba(255, 255, 255, 0.4)" />
-        <rect x="80" y="${startY + contentHeight + 54}" width="920" height="6" rx="35" 
-          fill="rgba(255, 255, 255, 0.4)" />
-        
-        <!-- Quote decorations with glow -->
-        <text x="130" y="${startY - 20}" 
-          font-family="Georgia, serif" 
-          font-size="140" 
+          filter="url(#shadow)" />
+        <text x="540" y="${startY - lineHeight - 85}" 
+          font-family="'Inter', 'SF Pro Display', Arial, sans-serif" 
+          font-size="24" 
+          font-weight="700"
           fill="#fff" 
-          opacity="0.25" 
+          text-anchor="middle"
+          filter="url(#strongGlow)">✨ ASPIRASI SISWA ✨</text>
+        
+        <!-- Large quote marks with strong glow -->
+        <text x="110" y="${startY - 30}" 
+          font-family="Georgia, serif" 
+          font-size="160" 
+          fill="url(#accent2)" 
+          opacity="0.35" 
           font-weight="bold"
-          filter="url(#textGlow)">"</text>
-        <text x="950" y="${startY + contentHeight + 40}" 
+          filter="url(#strongGlow)">"</text>
+        <text x="970" y="${startY + contentHeight + 60}" 
           font-family="Georgia, serif" 
-          font-size="140" 
-          fill="#fff" 
-          opacity="0.25" 
+          font-size="160" 
+          fill="url(#accent2)" 
+          opacity="0.35" 
           font-weight="bold" 
           text-anchor="end"
-          filter="url(#textGlow)">"</text>
+          filter="url(#strongGlow)">"</text>
         
-        <!-- Main aspiration text -->
+        <!-- Main aspiration text with premium styling -->
         <text x="540" y="${startY}" 
           text-anchor="middle" 
-          font-family="'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+          font-family="'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, Arial, sans-serif"
           font-size="${fontSize}" 
-          fill="#ffffff" 
-          letter-spacing="0.3"
-          filter="url(#textGlow)"
-          font-weight="600"
-          style="text-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+          fill="url(#textShine)" 
+          letter-spacing="0.4"
+          filter="url(#strongGlow)"
+          font-weight="700">
           ${tspans}
         </text>
         
-        <!-- Bottom accent line -->
-        <rect x="440" y="${startY + contentHeight + 80}" width="200" height="3" rx="1.5" 
-          fill="rgba(255, 255, 255, 0.5)" />
+        <!-- Bottom decorative elements -->
+        <g opacity="0.7">
+          <circle cx="480" cy="${startY + contentHeight + 100}" r="4" fill="#fff" filter="url(#glow)"/>
+          <circle cx="540" cy="${startY + contentHeight + 100}" r="4" fill="#fff" filter="url(#glow)"/>
+          <circle cx="600" cy="${startY + contentHeight + 100}" r="4" fill="#fff" filter="url(#glow)"/>
+        </g>
+        
+        <!-- Shine effect line -->
+        <rect x="200" y="${startY + contentHeight + 120}" width="680" height="2" rx="1" 
+          fill="url(#textShine)" opacity="0.5" filter="url(#glow)" />
       </svg>
     `;
 
