@@ -56,6 +56,36 @@ const PatternMaster = () => {
     }, (patternLength + 2) * 1000);
   };
 
+  const saveStats = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: currentStats } = await supabase
+        .from("player_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (currentStats) {
+        await supabase
+          .from("player_stats")
+          .update({
+            total_games_played: currentStats.total_games_played + 1,
+            total_points: currentStats.total_points + score,
+            highest_streak: Math.max(currentStats.highest_streak || 0, level),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+      } else {
+        await supabase.from("player_stats").insert({
+          user_id: user.id,
+          total_games_played: 1,
+          total_points: score,
+          highest_streak: level,
+        });
+      }
+    }
+  };
+
   const handleColorClick = (color: string) => {
     if (gameState !== "playing") return;
 
@@ -74,16 +104,17 @@ const PatternMaster = () => {
       const points = level * 10;
       setScore((prev) => prev + points);
       toast({
-        title: "Perfect! 🎉",
-        description: `+${points} poin! Level ${level + 1}`,
+        title: "Sempurna! 🎉",
+        description: `+${points} poin! Naik ke Level ${level + 1}`,
       });
       setLevel((prev) => prev + 1);
-      setTimeout(() => startRound(level + 1), 2000);
+      setTimeout(() => startRound(level + 1), 1500);
     } else {
+      saveStats();
       setGameState("finished");
       toast({
-        title: "Salah! 😅",
-        description: "Game Over",
+        title: "Waduh Salah! 😅",
+        description: "Pola tidak sesuai. Game Selesai!",
         variant: "destructive",
       });
     }
