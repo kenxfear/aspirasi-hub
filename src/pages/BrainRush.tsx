@@ -113,15 +113,33 @@ const BrainRush = () => {
     
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase.from("player_stats").upsert({
-        user_id: user.id,
-        total_games_played: 1,
-        total_points: score,
-        highest_streak: streak,
-      }, {
-        onConflict: "user_id",
-        ignoreDuplicates: false,
-      });
+      // Fetch current stats
+      const { data: currentStats } = await supabase
+        .from("player_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (currentStats) {
+        // Update existing stats
+        await supabase
+          .from("player_stats")
+          .update({
+            total_games_played: currentStats.total_games_played + 1,
+            total_points: currentStats.total_points + score,
+            highest_streak: Math.max(currentStats.highest_streak || 0, streak),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+      } else {
+        // Create new stats
+        await supabase.from("player_stats").insert({
+          user_id: user.id,
+          total_games_played: 1,
+          total_points: score,
+          highest_streak: streak,
+        });
+      }
     }
   };
 

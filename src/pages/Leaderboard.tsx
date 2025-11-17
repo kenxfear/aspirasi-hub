@@ -12,6 +12,26 @@ const Leaderboard = () => {
 
   useEffect(() => {
     loadLeaderboard();
+
+    // Setup real-time subscription
+    const channel = supabase
+      .channel('leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'player_stats'
+        },
+        () => {
+          loadLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadLeaderboard = async () => {
@@ -20,7 +40,7 @@ const Leaderboard = () => {
         .from("player_stats")
         .select(`
           *,
-          profiles:user_id (username, full_name)
+          profiles:user_id (username, full_name, avatar_url)
         `)
         .order("total_points", { ascending: false })
         .limit(50);

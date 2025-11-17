@@ -56,8 +56,39 @@ const WordSprint = () => {
     setLetters(generateLetters());
   };
 
-  const endGame = () => {
+  const endGame = async () => {
     setGameState("finished");
+    await saveStats();
+  };
+
+  const saveStats = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: currentStats } = await supabase
+        .from("player_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (currentStats) {
+        await supabase
+          .from("player_stats")
+          .update({
+            total_games_played: currentStats.total_games_played + 1,
+            total_points: currentStats.total_points + score,
+            highest_streak: Math.max(currentStats.highest_streak || 0, foundWords.length),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+      } else {
+        await supabase.from("player_stats").insert({
+          user_id: user.id,
+          total_games_played: 1,
+          total_points: score,
+          highest_streak: foundWords.length,
+        });
+      }
+    }
   };
 
   const checkWord = () => {
