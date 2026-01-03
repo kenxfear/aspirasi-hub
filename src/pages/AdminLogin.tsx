@@ -23,6 +23,31 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
+const SUPERADMIN_EMAIL = "superadmin@aspirasi.com";
+const SUPERADMIN_EXPECTED_PASSWORD = "faspirasp33.";
+const MAX_DAILY_ATTEMPTS = 3;
+
+const getRateLimitKey = () => {
+  const today = new Date().toISOString().split('T')[0];
+  return `superadmin_attempts_${today}`;
+};
+
+const getAttemptCount = (): number => {
+  const key = getRateLimitKey();
+  const stored = localStorage.getItem(key);
+  return stored ? parseInt(stored, 10) : 0;
+};
+
+const incrementAttempt = () => {
+  const key = getRateLimitKey();
+  const current = getAttemptCount();
+  localStorage.setItem(key, String(current + 1));
+};
+
+const isRateLimited = (): boolean => {
+  return getAttemptCount() >= MAX_DAILY_ATTEMPTS;
+};
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -92,14 +117,38 @@ const AdminLogin = () => {
     }
   };
 
-  const [superadminEmail, setSuperadminEmail] = useState("");
-
   const handleSuperadminLogin = async () => {
-    // Validate inputs
-    if (!superadminEmail.trim() || !superadminPassword.trim()) {
+    // Check rate limit first
+    if (isRateLimited()) {
+      toast({
+        title: "Terlalu Banyak Percobaan",
+        description: "Anda sudah mencoba 3 kali hari ini. Coba lagi besok.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password input
+    if (!superadminPassword.trim()) {
       toast({
         title: "Input Tidak Valid",
-        description: "Email dan password harus diisi.",
+        description: "Password harus diisi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Increment attempt count
+    incrementAttempt();
+
+    // Check password first before any auth calls
+    if (superadminPassword !== SUPERADMIN_EXPECTED_PASSWORD) {
+      const remaining = MAX_DAILY_ATTEMPTS - getAttemptCount();
+      toast({
+        title: "Password Salah",
+        description: remaining > 0 
+          ? `Sisa percobaan hari ini: ${remaining}` 
+          : "Anda sudah mencapai batas percobaan hari ini.",
         variant: "destructive",
       });
       return;
@@ -108,13 +157,49 @@ const AdminLogin = () => {
     try {
       setIsLoading(true);
       
-      // Login with provided credentials - no hardcoded values
+      // Try to sign in with superadmin account
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: superadminEmail.trim(),
+        email: SUPERADMIN_EMAIL,
         password: superadminPassword,
       });
 
-      if (signInError) throw signInError;
+      if (signInError) {
+        // If user doesn't exist, create the superadmin account
+        if (signInError.message.includes("Invalid")) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: SUPERADMIN_EMAIL,
+            password: superadminPassword,
+            options: {
+              data: {
+                full_name: "Super Admin",
+                username: "superadmin",
+              },
+            },
+          });
+
+          if (signUpError) throw signUpError;
+
+          // Add superadmin role
+          if (signUpData.user) {
+            const { error: roleError } = await supabase
+              .from("user_roles")
+              .insert({
+                user_id: signUpData.user.id,
+                role: "superadmin",
+              });
+
+            if (roleError) throw roleError;
+          }
+
+          toast({
+            title: "Superadmin Dibuat",
+            description: "Akun superadmin berhasil dibuat. Silakan login kembali.",
+          });
+          setSuperadminPassword("");
+          return;
+        }
+        throw signInError;
+      }
 
       // Verify user has superadmin role
       if (signInData.user) {
@@ -137,7 +222,7 @@ const AdminLogin = () => {
     } catch (error: any) {
       toast({
         title: "Login Gagal",
-        description: error.message || "Email atau password tidak valid.",
+        description: error.message || "Terjadi kesalahan. Coba lagi nanti.",
         variant: "destructive",
       });
     } finally {
@@ -234,20 +319,10 @@ const AdminLogin = () => {
                 <DialogHeader>
                   <DialogTitle>Superadmin Login</DialogTitle>
                   <DialogDescription>
-                    Masukkan password superadmin untuk akses penuh
+                    Masukkan password superadmin untuk akses penuh (maks 3x/hari)
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="superadmin-email">Email Superadmin</Label>
-                    <Input
-                      id="superadmin-email"
-                      type="email"
-                      placeholder="Masukkan email superadmin"
-                      value={superadminEmail}
-                      onChange={(e) => setSuperadminEmail(e.target.value)}
-                    />
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="superadmin-password">Password Superadmin</Label>
                     <Input
@@ -257,13 +332,16 @@ const AdminLogin = () => {
                       value={superadminPassword}
                       onChange={(e) => setSuperadminPassword(e.target.value)}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Sisa percobaan hari ini: {Math.max(0, MAX_DAILY_ATTEMPTS - getAttemptCount())}
+                    </p>
                   </div>
                   <Button
                     onClick={handleSuperadminLogin}
                     className="w-full bg-gradient-to-r from-secondary to-destructive"
-                    disabled={isLoading}
+                    disabled={isLoading || isRateLimited()}
                   >
-                    {isLoading ? "Memproses..." : "Login Superadmin"}
+                    {isLoading ? "Memproses..." : isRateLimited() ? "Coba Lagi Besok" : "Login Superadmin"}
                   </Button>
                 </div>
               </DialogContent>
