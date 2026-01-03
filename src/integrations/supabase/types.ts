@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      achievements: {
-        Row: {
-          created_at: string
-          description: string
-          icon: string
-          id: string
-          points_reward: number
-          requirement_type: string
-          requirement_value: number
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          icon: string
-          id?: string
-          points_reward?: number
-          requirement_type: string
-          requirement_value: number
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          icon?: string
-          id?: string
-          points_reward?: number
-          requirement_type?: string
-          requirement_value?: number
-          title?: string
-        }
-        Relationships: []
-      }
       aspirations: {
         Row: {
           content: string
@@ -76,73 +43,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      challenge_completions: {
-        Row: {
-          challenge_id: string
-          completed_at: string
-          id: string
-          score_achieved: number
-          user_id: string
-        }
-        Insert: {
-          challenge_id: string
-          completed_at?: string
-          id?: string
-          score_achieved: number
-          user_id: string
-        }
-        Update: {
-          challenge_id?: string
-          completed_at?: string
-          id?: string
-          score_achieved?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenge_completions_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "daily_challenges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_messages: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_system: boolean | null
-          message: string
-          room_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_system?: boolean | null
-          message: string
-          room_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_system?: boolean | null
-          message?: string
-          room_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "game_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       comments: {
         Row: {
@@ -176,324 +76,8 @@ export type Database = {
           },
         ]
       }
-      daily_challenges: {
-        Row: {
-          bonus_points: number
-          challenge_date: string
-          created_at: string
-          description: string
-          game_type: Database["public"]["Enums"]["game_type"]
-          id: string
-          target_score: number
-          title: string
-        }
-        Insert: {
-          bonus_points?: number
-          challenge_date: string
-          created_at?: string
-          description: string
-          game_type: Database["public"]["Enums"]["game_type"]
-          id?: string
-          target_score: number
-          title: string
-        }
-        Update: {
-          bonus_points?: number
-          challenge_date?: string
-          created_at?: string
-          description?: string
-          game_type?: Database["public"]["Enums"]["game_type"]
-          id?: string
-          target_score?: number
-          title?: string
-        }
-        Relationships: []
-      }
-      friendships: {
-        Row: {
-          created_at: string | null
-          friend_id: string
-          id: string
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          friend_id: string
-          id?: string
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          friend_id?: string
-          id?: string
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      game_rooms: {
-        Row: {
-          created_at: string | null
-          ended_at: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
-          host_id: string
-          id: string
-          is_private: boolean | null
-          max_players: number | null
-          room_code: string
-          started_at: string | null
-          status: Database["public"]["Enums"]["room_status"] | null
-        }
-        Insert: {
-          created_at?: string | null
-          ended_at?: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
-          host_id: string
-          id?: string
-          is_private?: boolean | null
-          max_players?: number | null
-          room_code: string
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["room_status"] | null
-        }
-        Update: {
-          created_at?: string | null
-          ended_at?: string | null
-          game_type?: Database["public"]["Enums"]["game_type"]
-          host_id?: string
-          id?: string
-          is_private?: boolean | null
-          max_players?: number | null
-          room_code?: string
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["room_status"] | null
-        }
-        Relationships: []
-      }
-      game_sessions: {
-        Row: {
-          created_at: string | null
-          duration_seconds: number | null
-          game_type: Database["public"]["Enums"]["game_type"]
-          id: string
-          room_id: string | null
-          total_players: number
-          winner_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          duration_seconds?: number | null
-          game_type: Database["public"]["Enums"]["game_type"]
-          id?: string
-          room_id?: string | null
-          total_players: number
-          winner_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          duration_seconds?: number | null
-          game_type?: Database["public"]["Enums"]["game_type"]
-          id?: string
-          room_id?: string | null
-          total_players?: number
-          winner_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_sessions_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "game_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      player_achievements: {
-        Row: {
-          achievement_id: string
-          id: string
-          unlocked_at: string
-          user_id: string
-        }
-        Insert: {
-          achievement_id: string
-          id?: string
-          unlocked_at?: string
-          user_id: string
-        }
-        Update: {
-          achievement_id?: string
-          id?: string
-          unlocked_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "player_achievements_achievement_id_fkey"
-            columns: ["achievement_id"]
-            isOneToOne: false
-            referencedRelation: "achievements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      player_badges: {
-        Row: {
-          badge_description: string
-          badge_icon: string
-          badge_name: string
-          earned_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          badge_description: string
-          badge_icon: string
-          badge_name: string
-          earned_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          badge_description?: string
-          badge_icon?: string
-          badge_name?: string
-          earned_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      player_items: {
-        Row: {
-          id: string
-          power_up_id: string
-          purchased_at: string
-          quantity: number
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          power_up_id: string
-          purchased_at?: string
-          quantity?: number
-          user_id: string
-        }
-        Update: {
-          id?: string
-          power_up_id?: string
-          purchased_at?: string
-          quantity?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "player_items_power_up_id_fkey"
-            columns: ["power_up_id"]
-            isOneToOne: false
-            referencedRelation: "power_ups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      player_rankings: {
-        Row: {
-          achieved_at: string
-          id: string
-          min_points: number
-          rank_icon: string
-          rank_name: string
-          user_id: string
-        }
-        Insert: {
-          achieved_at?: string
-          id?: string
-          min_points: number
-          rank_icon: string
-          rank_name: string
-          user_id: string
-        }
-        Update: {
-          achieved_at?: string
-          id?: string
-          min_points?: number
-          rank_icon?: string
-          rank_name?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      player_stats: {
-        Row: {
-          created_at: string | null
-          highest_streak: number | null
-          id: string
-          total_games_played: number | null
-          total_points: number | null
-          total_wins: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          highest_streak?: number | null
-          id?: string
-          total_games_played?: number | null
-          total_points?: number | null
-          total_wins?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          highest_streak?: number | null
-          id?: string
-          total_games_played?: number | null
-          total_points?: number | null
-          total_wins?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      power_ups: {
-        Row: {
-          cost: number
-          created_at: string
-          description: string
-          effect_type: string
-          effect_value: number
-          icon: string
-          id: string
-          name: string
-        }
-        Insert: {
-          cost?: number
-          created_at?: string
-          description: string
-          effect_type: string
-          effect_value?: number
-          icon: string
-          id?: string
-          name: string
-        }
-        Update: {
-          cost?: number
-          created_at?: string
-          description?: string
-          effect_type?: string
-          effect_value?: number
-          icon?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
-          avatar_url: string | null
           created_at: string
           full_name: string
           id: string
@@ -501,7 +85,6 @@ export type Database = {
           username: string
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           full_name: string
           id: string
@@ -509,115 +92,11 @@ export type Database = {
           username: string
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id?: string
           updated_at?: string
           username?: string
-        }
-        Relationships: []
-      }
-      room_players: {
-        Row: {
-          id: string
-          is_ready: boolean | null
-          joined_at: string | null
-          room_id: string
-          score: number | null
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          is_ready?: boolean | null
-          joined_at?: string | null
-          room_id: string
-          score?: number | null
-          user_id: string
-        }
-        Update: {
-          id?: string
-          is_ready?: boolean | null
-          joined_at?: string | null
-          room_id?: string
-          score?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "room_players_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "game_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      session_scores: {
-        Row: {
-          created_at: string | null
-          id: string
-          rank: number | null
-          score: number
-          session_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          rank?: number | null
-          score: number
-          session_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          rank?: number | null
-          score?: number
-          session_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "session_scores_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "game_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      special_events: {
-        Row: {
-          bonus_multiplier: number
-          created_at: string
-          description: string
-          end_date: string
-          game_type: Database["public"]["Enums"]["game_type"]
-          id: string
-          start_date: string
-          title: string
-        }
-        Insert: {
-          bonus_multiplier?: number
-          created_at?: string
-          description: string
-          end_date: string
-          game_type: Database["public"]["Enums"]["game_type"]
-          id?: string
-          start_date: string
-          title: string
-        }
-        Update: {
-          bonus_multiplier?: number
-          created_at?: string
-          description?: string
-          end_date?: string
-          game_type?: Database["public"]["Enums"]["game_type"]
-          id?: string
-          start_date?: string
-          title?: string
         }
         Relationships: []
       }
@@ -647,7 +126,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_room_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -658,8 +136,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "superadmin"
-      game_type: "brain_rush" | "pattern_master" | "word_sprint"
-      room_status: "waiting" | "playing" | "finished"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -788,8 +264,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "superadmin"],
-      game_type: ["brain_rush", "pattern_master", "word_sprint"],
-      room_status: ["waiting", "playing", "finished"],
     },
   },
 } as const
