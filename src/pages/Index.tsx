@@ -32,14 +32,14 @@ const Index = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent animate-fade-in leading-tight" style={{ animationDelay: '0.2s' }}>
-            Portal Aspirasi
+            FASPIRA
             <br />
-            <span className="text-4xl md:text-6xl lg:text-7xl">Siswa</span>
+            <span className="text-4xl md:text-6xl lg:text-7xl">Forum Aspirasi Siswa</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.3s' }}>
             Sampaikan aspirasi Anda dengan mudah, aman, dan terjamin kerahasiaannya.
-            <span className="block mt-3 text-primary font-semibold text-2xl md:text-3xl">Suara Anda Sangat Berarti! ✨</span>
+            <span className="block mt-3 text-primary font-semibold text-2xl md:text-3xl">Suara Anda Sangat Berarti Bagi Kami! ✨</span>
           </p>
         </div>
 
@@ -113,7 +113,7 @@ const Index = () => {
               Platform ini menjamin keamanan dan kerahasiaan aspirasi Anda dengan teknologi{' '}
               <button 
                 onClick={() => navigate('/admin/login')}
-                className="text-primary hover:text-accent font-semibold underline decoration-dotted underline-offset-4 transition-colors duration-300"
+                className="decoration-dotted underline-offset-4 transition-colors duration-300"
               >
                 enkripsi
               </button>
@@ -136,7 +136,7 @@ const Index = () => {
           
           <div className="flex items-center justify-center gap-1 text-muted-foreground/50 text-xs">
             <Star className="w-3 h-3" />
-            <span>Dibuat dengan cinta untuk siswa Indonesia</span>
+            <span>DIBUAT OLEH MPK SMA NEGERI 1 KENDAL</span>
             <Star className="w-3 h-3" />
           </div>
         </div>

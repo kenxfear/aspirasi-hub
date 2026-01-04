@@ -20,6 +20,18 @@ const AdminLogin = () => {
 
     const checkSession = async () => {
       try {
+        // Process OAuth callback URL (if present) to extract session
+        try {
+          const { data: urlSessionData, error: urlError } = await supabase.auth.getSessionFromUrl();
+          if (urlError) {
+            console.debug("getSessionFromUrl error:", urlError);
+          } else if (urlSessionData?.session) {
+            if (mounted) await handlePostLogin(urlSessionData.session.user, false);
+          }
+        } catch (e) {
+          console.debug("getSessionFromUrl threw:", e);
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && mounted) {
           await handlePostLogin(session.user, true);
@@ -54,6 +66,7 @@ const AdminLogin = () => {
   const handlePostLogin = async (user: any, silent: boolean = false) => {
     try {
       const userEmail = user.email?.toLowerCase();
+      console.debug("PostLogin: userEmail=", userEmail, "userId=", user.id);
       
       // Check if user email is superadmin
       if (userEmail === SUPERADMIN_EMAIL.toLowerCase()) {
@@ -88,6 +101,8 @@ const AdminLogin = () => {
         .select("email")
         .eq("email", userEmail)
         .maybeSingle();
+
+      console.debug("PostLogin: adminEmail lookup result=", adminEmail);
 
       if (!adminEmail) {
         await supabase.auth.signOut();
