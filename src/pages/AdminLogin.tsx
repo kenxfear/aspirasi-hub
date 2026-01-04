@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, LogIn } from "lucide-react";
+import { ArrowLeft, LogIn, Loader2, Shield, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -13,31 +13,28 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     // Check if already logged in
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Check if user has admin or superadmin role
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
-
-        if (roles && roles.length > 0) {
-          navigate("/admin/dashboard");
-        }
+        await handlePostLogin(session.user, true);
       }
+      setIsChecking(false);
     };
 
     checkSession();
 
     // Listen for auth changes (after Google redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === "SIGNED_IN" && session?.user) {
-          await handlePostLogin(session.user);
+          // Use setTimeout to prevent deadlock
+          setTimeout(() => {
+            handlePostLogin(session.user, false);
+          }, 0);
         }
       }
     );
@@ -45,7 +42,7 @@ const AdminLogin = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handlePostLogin = async (user: any) => {
+  const handlePostLogin = async (user: any, silent: boolean = false) => {
     try {
       // Check if user email is superadmin
       if (user.email === SUPERADMIN_EMAIL) {
@@ -55,7 +52,7 @@ const AdminLogin = () => {
           .select("role")
           .eq("user_id", user.id)
           .eq("role", "superadmin")
-          .single();
+          .maybeSingle();
 
         if (!existingRole) {
           // Add superadmin role
@@ -65,29 +62,33 @@ const AdminLogin = () => {
           });
         }
 
-        toast({
-          title: "Login Berhasil",
-          description: "Selamat datang Superadmin!",
-        });
+        if (!silent) {
+          toast({
+            title: "Login Berhasil! 🎉",
+            description: "Selamat datang Superadmin!",
+          });
+        }
         navigate("/admin/dashboard");
         return;
       }
 
-      // For regular admins, check if their email is registered using raw query
+      // For regular admins, check if their email is registered
       const { data: adminEmails, error: adminError } = await supabase
         .from("admin_emails" as any)
         .select("email")
         .eq("email", user.email)
-        .single();
+        .maybeSingle() as any;
 
       if (adminError || !adminEmails) {
         // Not an authorized admin
         await supabase.auth.signOut();
-        toast({
-          title: "Akses Ditolak",
-          description: "Email Anda tidak terdaftar sebagai admin.",
-          variant: "destructive",
-        });
+        if (!silent) {
+          toast({
+            title: "Akses Ditolak ❌",
+            description: "Email Anda tidak terdaftar sebagai admin. Hubungi superadmin untuk mendapatkan akses.",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -97,7 +98,7 @@ const AdminLogin = () => {
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin")
-        .single();
+        .maybeSingle();
 
       if (!existingRole) {
         // Add admin role
@@ -107,18 +108,22 @@ const AdminLogin = () => {
         });
       }
 
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang di panel admin!",
-      });
+      if (!silent) {
+        toast({
+          title: "Login Berhasil! 🎉",
+          description: "Selamat datang di panel admin!",
+        });
+      }
       navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Post-login error:", error);
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat memproses login.",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat memproses login.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -139,17 +144,28 @@ const AdminLogin = () => {
         description: error.message || "Tidak dapat login dengan Google.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium">Memeriksa sesi...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary/5 via-background to-accent/5 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <ThemeToggle />
@@ -157,33 +173,36 @@ const AdminLogin = () => {
       <div className="w-full max-w-md relative z-10">
         <Button
           variant="ghost"
-          className="mb-6 hover:bg-muted"
+          className="mb-6 hover:bg-muted/80 backdrop-blur-sm border border-border/50 transition-all duration-300 hover:scale-105"
           onClick={() => navigate("/")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali
         </Button>
 
-        <Card className="p-8 animate-fade-in shadow-2xl border-2">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-secondary to-accent mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
-              <LogIn className="w-10 h-10 text-white" />
+        <Card className="p-10 animate-fade-in shadow-2xl border-2 border-primary/20 bg-card/95 backdrop-blur-md hover:shadow-3xl transition-all duration-500">
+          <div className="text-center mb-10">
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/30 rounded-3xl blur-xl animate-pulse" />
+              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform duration-300">
+                <LogIn className="w-12 h-12 text-white" />
+              </div>
             </div>
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               Admin Login
             </h1>
-            <p className="text-muted-foreground">
-              Login dengan akun Google yang terdaftar
+            <p className="text-muted-foreground text-lg">
+              Login dengan akun Google Anda
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             <Button
               onClick={handleGoogleLogin}
-              className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-medium py-6"
+              className="w-full bg-card hover:bg-muted text-foreground border-2 border-border/50 font-semibold py-7 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/50 group"
               disabled={isLoading}
             >
-              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -201,11 +220,30 @@ const AdminLogin = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              {isLoading ? "Memproses..." : "Login dengan Google"}
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Menghubungkan...
+                </span>
+              ) : (
+                "Masuk dengan Google"
+              )}
             </Button>
 
-            <div className="text-center text-sm text-muted-foreground">
-              <p>Hanya email yang terdaftar oleh superadmin yang dapat login.</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border/50">
+                <Shield className="w-5 h-5 text-primary flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Hanya email yang terdaftar oleh superadmin yang dapat login
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border/50">
+                <Sparkles className="w-5 h-5 text-accent flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Sesi login akan tersimpan otomatis
+                </p>
+              </div>
             </div>
           </div>
         </Card>

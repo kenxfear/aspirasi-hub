@@ -13,6 +13,7 @@ import {
   Calendar,
   User,
   GraduationCap,
+  Loader2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -49,9 +50,12 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
   const [isCommenting, setIsCommenting] = useState(false);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDelete = async () => {
     try {
+      setIsDeleting(true);
       const { error } = await supabase
         .from("aspirations")
         .delete()
@@ -60,7 +64,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
       if (error) throw error;
 
       toast({
-        title: "Aspirasi Dihapus",
+        title: "Aspirasi Dihapus ✓",
         description: "Aspirasi berhasil dihapus.",
       });
       onUpdate();
@@ -70,6 +74,8 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
         description: "Terjadi kesalahan saat menghapus aspirasi.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -91,7 +97,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
       if (error) throw error;
 
       toast({
-        title: "Komentar Ditambahkan",
+        title: "Komentar Ditambahkan ✓",
         description: "Komentar berhasil ditambahkan.",
       });
       setComment("");
@@ -110,6 +116,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
 
   const handleDownloadDesign = async () => {
     try {
+      setIsDownloading(true);
       toast({
         title: "Membuat Design...",
         description: "Mohon tunggu, design sedang dibuat dengan AI...",
@@ -121,7 +128,6 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
 
       if (response.error) throw response.error;
 
-      // Convert returned SVG to PNG client-side to ensure compatibility on all devices
       const svgText = typeof response.data === "string"
         ? response.data
         : new TextDecoder().decode(response.data as ArrayBuffer);
@@ -173,6 +179,8 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
         description: "Tidak dapat membuat design aspirasi.",
         variant: "destructive",
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -188,65 +196,77 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
 
   return (
     <Card 
-      className="p-6 hover:shadow-lg transition-all animate-fade-in"
+      className="p-6 md:p-8 hover:shadow-2xl transition-all duration-500 border-2 border-primary/10 bg-card/80 backdrop-blur-sm hover:border-primary/30 group"
       style={{ animationDelay: `${delay}s` }}
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Header */}
         <div className="flex justify-between items-start gap-4">
-          <div className="space-y-2 flex-1">
+          <div className="space-y-4 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <User className="h-3 w-3" />
+              <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border-0 font-medium">
+                <User className="h-3.5 w-3.5" />
                 {aspiration.student_name}
               </Badge>
               {aspiration.student_class && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <GraduationCap className="h-3 w-3" />
+                <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 border-accent/50 text-accent">
+                  <GraduationCap className="h-3.5 w-3.5" />
                   {aspiration.student_class}
                 </Badge>
               )}
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+              <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5" />
                 {formatDate(aspiration.created_at)}
               </Badge>
             </div>
-            <p className="text-sm md:text-base leading-relaxed">{aspiration.content}</p>
+            <p className="text-base md:text-lg leading-relaxed text-foreground/90">{aspiration.content}</p>
           </div>
         </div>
 
+        {/* Comments Section */}
         {aspiration.comments.length > 0 && (
-          <div className="space-y-2 border-t pt-4">
-            <p className="text-sm font-medium text-muted-foreground">Komentar Admin:</p>
-            {aspiration.comments.map((comment) => (
-              <div key={comment.id} className="bg-muted/50 p-3 rounded-lg">
-                <p className="text-sm">{comment.comment_text}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(comment.created_at)}
-                </p>
-              </div>
-            ))}
+          <div className="space-y-3 border-t-2 border-border/50 pt-5">
+            <p className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Komentar Admin ({aspiration.comments.length})
+            </p>
+            <div className="space-y-3">
+              {aspiration.comments.map((comment) => (
+                <div key={comment.id} className="bg-muted/50 p-4 rounded-xl border border-border/50">
+                  <p className="text-sm md:text-base">{comment.comment_text}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {formatDate(comment.created_at)}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
+        {/* Comment Input */}
         {isCommenting && (
-          <div className="space-y-2">
+          <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border/50 animate-fade-in">
             <Textarea
-              placeholder="Tulis komentar..."
+              placeholder="Tulis komentar Anda..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={3}
+              rows={4}
+              className="border-2 focus:border-primary transition-colors resize-none"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
-                size="sm"
                 onClick={handleAddComment}
                 disabled={isSubmitting || !comment.trim()}
+                className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
               >
-                <Send className="mr-2 h-4 w-4" />
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
                 Kirim
               </Button>
               <Button
-                size="sm"
                 variant="outline"
                 onClick={() => {
                   setIsCommenting(false);
@@ -259,12 +279,13 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 pt-2">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3 pt-3">
           <Button
             size="sm"
             variant="outline"
             onClick={() => setIsCommenting(!isCommenting)}
-            className="border-accent text-accent hover:bg-accent hover:text-white"
+            className="border-2 border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent transition-all duration-300 hover:scale-105"
           >
             <MessageCircle className="mr-2 h-4 w-4" />
             {isCommenting ? "Tutup" : "Komentar"}
@@ -273,9 +294,14 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
             size="sm"
             variant="outline"
             onClick={handleDownloadDesign}
-            className="border-primary text-primary hover:bg-primary hover:text-white"
+            disabled={isDownloading}
+            className="border-2 border-primary/50 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 hover:scale-105"
           >
-            <Download className="mr-2 h-4 w-4" />
+            {isDownloading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
             Download Design
           </Button>
           <AlertDialog>
@@ -283,21 +309,26 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
               <Button
                 size="sm"
                 variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                disabled={isDeleting}
+                className="border-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-all duration-300 hover:scale-105"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
                 Hapus
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-2">
               <AlertDialogHeader>
-                <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="text-xl">Konfirmasi Hapus</AlertDialogTitle>
+                <AlertDialogDescription className="text-base">
                   Apakah Anda yakin ingin menghapus aspirasi ini? Tindakan ini tidak dapat dibatalkan.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogCancel className="border-2">Batal</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
                   Hapus
                 </AlertDialogAction>
