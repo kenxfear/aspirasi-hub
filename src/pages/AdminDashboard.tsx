@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Search, MessageSquare, Users, ShieldCheck, FileText, BarChart3 } from "lucide-react";
+import { LogOut, Search, MessageSquare, Users, ShieldCheck, FileText, BarChart3, Loader2 } from "lucide-react";
 import AspirationCard from "@/components/AspirationCard";
 import AspirationStats from "@/components/AspirationStats";
 import { AdminUserManagement } from "@/components/AdminUserManagement";
@@ -49,9 +49,9 @@ const AdminDashboard = () => {
   }, [searchQuery, aspirations]);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!user) {
+    if (!session?.user) {
       navigate("/admin/login");
       return;
     }
@@ -59,7 +59,7 @@ const AdminDashboard = () => {
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id);
+      .eq("user_id", session.user.id);
 
     if (!roles || roles.length === 0) {
       await supabase.auth.signOut();
@@ -67,8 +67,10 @@ const AdminDashboard = () => {
       return;
     }
 
-    setUser(user);
-    setUserRole(roles[0].role);
+    setUser(session.user);
+    // Prioritize superadmin role if user has both
+    const hasSuperadmin = roles.some(r => r.role === "superadmin");
+    setUserRole(hasSuperadmin ? "superadmin" : roles[0].role);
   };
 
   const fetchAspirations = async () => {
@@ -118,7 +120,7 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Logout Berhasil",
+      title: "Logout Berhasil 👋",
       description: "Sampai jumpa!",
     });
     navigate("/");
@@ -131,9 +133,8 @@ const AdminDashboard = () => {
         description: "Mohon tunggu, dokumen sedang dibuat",
       });
 
-      const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation for better table fit
+      const doc = new jsPDF('l', 'mm', 'a4');
       
-      // Header with styling
       doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(99, 102, 241);
@@ -151,7 +152,6 @@ const AdminDashboard = () => {
       
       doc.text(`Total Aspirasi: ${filteredAspirations.length}`, doc.internal.pageSize.getWidth() / 2, 34, { align: "center" });
       
-      // Table data - matching Excel format exactly
       const tableData = filteredAspirations.map((asp, index) => [
         (index + 1).toString(),
         asp.student_name,
@@ -168,7 +168,7 @@ const AdminDashboard = () => {
 
       autoTable(doc, {
         startY: 42,
-        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status", "Jumlah Komentar"]],
+        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status", "Komentar"]],
         body: tableData,
         styles: {
           fontSize: 9,
@@ -202,7 +202,6 @@ const AdminDashboard = () => {
         margin: { left: 14, right: 14 },
       });
 
-      // Footer
       const pageCount = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -233,10 +232,10 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium">Memuat data...</p>
         </div>
       </div>
     );
@@ -244,18 +243,19 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 relative overflow-hidden">
-      {/* Animated background */}
+      {/* Enhanced animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <ThemeToggle />
       
       <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 animate-fade-in">
-          <div className="space-y-3">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10 animate-fade-in">
+          <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-xl opacity-50 animate-pulse" />
@@ -264,20 +264,26 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent animate-fade-in">
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                   Dashboard Admin
                 </h1>
                 {userRole === "superadmin" && (
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 mt-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white text-sm font-bold shadow-xl animate-pulse">
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 mt-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white text-sm font-bold shadow-xl">
                     <ShieldCheck className="w-4 h-4" />
-                    SUPERADMIN ACCESS
+                    SUPERADMIN
                   </span>
                 )}
               </div>
             </div>
-            <p className="text-muted-foreground text-xl ml-24 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <p className="text-muted-foreground text-lg ml-20">
               Kelola dan pantau aspirasi siswa secara real-time ✨
             </p>
+            {user && (
+              <p className="text-sm text-muted-foreground ml-20 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                Logged in as: {user.email}
+              </p>
+            )}
           </div>
           
           <div className="flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -285,7 +291,7 @@ const AdminDashboard = () => {
               <Button
                 onClick={() => setShowSuperAdminPanel(!showSuperAdminPanel)}
                 variant="outline"
-                className="group border-2 border-secondary/50 bg-background/50 backdrop-blur-sm text-secondary hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-secondary/50"
+                className="group border-2 border-secondary/50 bg-card/50 backdrop-blur-sm text-secondary hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 hover:scale-105 hover:shadow-xl"
               >
                 <Users className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
                 {showSuperAdminPanel ? "Lihat Aspirasi" : "Kelola Admin"}
@@ -294,14 +300,14 @@ const AdminDashboard = () => {
             <Button
               onClick={() => navigate("/admin/statistics")}
               variant="outline"
-              className="group border-2 border-accent/50 bg-background/50 backdrop-blur-sm text-accent hover:bg-accent hover:text-white hover:border-accent transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-accent/50"
+              className="group border-2 border-accent/50 bg-card/50 backdrop-blur-sm text-accent hover:bg-accent hover:text-white hover:border-accent transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
               <BarChart3 className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
               Statistik
             </Button>
             <Button
               onClick={handleDownloadPDF}
-              className="group bg-gradient-to-r from-accent to-secondary text-white hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl"
+              className="group bg-gradient-to-r from-accent to-secondary text-white hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               <FileText className="mr-2 h-5 w-5 group-hover:rotate-6 transition-transform" />
               Download PDF
@@ -309,7 +315,7 @@ const AdminDashboard = () => {
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="group border-2 border-destructive/50 bg-background/50 backdrop-blur-sm text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-destructive/50"
+              className="group border-2 border-destructive/50 bg-card/50 backdrop-blur-sm text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
               <LogOut className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               Logout
@@ -318,38 +324,42 @@ const AdminDashboard = () => {
         </div>
 
         {userRole === "superadmin" && showSuperAdminPanel ? (
-          <AdminUserManagement />
+          <div className="animate-fade-in">
+            <AdminUserManagement />
+          </div>
         ) : (
           <>
             <AspirationStats aspirations={aspirations} />
 
-            <Card className="group relative p-8 mb-8 shadow-2xl border-2 border-primary/30 bg-gradient-to-br from-card via-card/80 to-primary/5 backdrop-blur-sm animate-fade-in hover:shadow-3xl hover:border-primary/50 transition-all duration-500">
+            {/* Search Card */}
+            <Card className="group relative p-6 mb-8 shadow-xl border-2 border-primary/20 bg-card/80 backdrop-blur-md animate-fade-in hover:shadow-2xl hover:border-primary/40 transition-all duration-500">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2">
-                  <Search className="h-6 w-6 text-primary animate-pulse" />
+              <div className="relative flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <Search className="h-6 w-6 text-primary" />
                 </div>
                 <Input
-                  placeholder="🔍 Cari berdasarkan nama siswa, kelas, atau isi aspirasi..."
+                  placeholder="Cari berdasarkan nama siswa, kelas, atau isi aspirasi..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-14 pr-6 py-7 text-lg border-2 border-primary/20 focus:border-primary bg-background/50 backdrop-blur-sm rounded-xl transition-all duration-300 hover:shadow-lg focus:shadow-xl"
+                  className="flex-1 py-6 text-base border-2 border-primary/10 focus:border-primary bg-background/50 backdrop-blur-sm rounded-xl transition-all duration-300 hover:shadow-lg focus:shadow-xl"
                 />
               </div>
             </Card>
 
+            {/* Aspirations List */}
             {filteredAspirations.length === 0 ? (
-              <Card className="p-20 text-center shadow-3xl border-2 border-primary/20 bg-gradient-to-br from-card via-muted/10 to-accent/5 backdrop-blur-lg animate-fade-in hover:shadow-4xl transition-all duration-500">
-                <div className="relative w-32 h-32 mx-auto mb-8">
+              <Card className="p-16 text-center shadow-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-lg animate-fade-in hover:shadow-3xl transition-all duration-500">
+                <div className="relative w-28 h-28 mx-auto mb-8">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/30 rounded-full blur-2xl animate-pulse" />
                   <div className="relative w-full h-full rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <MessageSquare className="w-16 h-16 text-primary animate-pulse" />
+                    <MessageSquare className="w-14 h-14 text-primary" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                   {searchQuery ? "Hasil Tidak Ditemukan" : "Belum Ada Aspirasi"}
                 </h3>
-                <p className="text-muted-foreground text-xl max-w-md mx-auto">
+                <p className="text-muted-foreground text-lg max-w-md mx-auto">
                   {searchQuery
                     ? "Coba gunakan kata kunci lain untuk pencarian Anda"
                     : "Aspirasi siswa akan muncul di sini setelah mereka mengirimkan 📝"}
@@ -360,7 +370,7 @@ const AdminDashboard = () => {
                 {filteredAspirations.map((aspiration, index) => (
                   <div 
                     key={aspiration.id}
-                    className="animate-fade-in hover:scale-[1.01] transition-all duration-300"
+                    className="animate-fade-in"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <AspirationCard

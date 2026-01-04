@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, CheckCircle2, User, GraduationCap, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -21,6 +21,7 @@ const SubmitAspiration = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     studentName: "",
     studentClass: "",
@@ -44,13 +45,13 @@ const SubmitAspiration = () => {
 
       if (error) throw error;
 
+      setIsSuccess(true);
       toast({
-        title: "Aspirasi Terkirim!",
+        title: "Aspirasi Terkirim! 🎉",
         description: "Terima kasih telah menyampaikan aspirasi Anda.",
       });
 
-      setFormData({ studentName: "", studentClass: "", content: "" });
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/"), 3000);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -72,9 +73,38 @@ const SubmitAspiration = () => {
     }
   };
 
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 flex items-center justify-center px-4 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-green-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" />
+        </div>
+        
+        <Card className="p-12 max-w-md text-center animate-scale-in shadow-2xl border-2 border-green-500/30 bg-card/95 backdrop-blur-md">
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl animate-pulse" />
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-2xl">
+              <CheckCircle2 className="w-14 h-14 text-white" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-green-500 to-accent bg-clip-text text-transparent">
+            Aspirasi Terkirim!
+          </h2>
+          <p className="text-muted-foreground text-lg mb-6">
+            Terima kasih telah menyampaikan aspirasi Anda. Suara Anda sangat berarti! ✨
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Mengarahkan ke halaman utama dalam 3 detik...
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 py-12 px-4 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Enhanced animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 right-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-10 left-10 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }} />
@@ -86,81 +116,100 @@ const SubmitAspiration = () => {
       <div className="container max-w-3xl mx-auto relative z-10">
         <Button
           variant="ghost"
-          className="mb-6 hover:bg-muted/80 backdrop-blur-sm border border-border/50"
+          className="mb-8 hover:bg-muted/80 backdrop-blur-sm border border-border/50 transition-all duration-300 hover:scale-105"
           onClick={() => navigate("/")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali
         </Button>
 
-        <Card className="p-8 md:p-10 animate-fade-in shadow-2xl border-2 backdrop-blur-sm bg-card/95">
-          <div className="text-center mb-8">
-            <div className="inline-block mb-4">
-              <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto" />
+        <Card className="p-10 md:p-14 animate-fade-in shadow-2xl border-2 border-primary/20 backdrop-blur-md bg-card/95 hover:shadow-3xl transition-all duration-500">
+          <div className="text-center mb-10">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/30 rounded-2xl blur-xl animate-pulse" />
+              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-2xl">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               Kirim Aspirasi
             </h1>
             <p className="text-muted-foreground text-lg">
               Sampaikan pendapat, saran, atau keluhan Anda dengan jujur dan aman ✨
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               Identitas Anda akan tetap terjaga kerahasiaannya
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="studentName">
-                Nama (Opsional)
-              </Label>
-              <Input
-                id="studentName"
-                placeholder="Masukkan nama Anda"
-                value={formData.studentName}
-                onChange={(e) =>
-                  setFormData({ ...formData, studentName: e.target.value })
-                }
-                className={errors.studentName ? "border-destructive" : ""}
-              />
-              {errors.studentName && (
-                <p className="text-sm text-destructive">{errors.studentName}</p>
-              )}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="studentName" className="flex items-center gap-2 text-base">
+                  <User className="w-4 h-4 text-primary" />
+                  Nama (Opsional)
+                </Label>
+                <Input
+                  id="studentName"
+                  placeholder="Masukkan nama Anda"
+                  value={formData.studentName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, studentName: e.target.value })
+                  }
+                  className={`py-6 text-base border-2 transition-all duration-300 focus:border-primary hover:border-primary/50 ${errors.studentName ? "border-destructive" : ""}`}
+                />
+                {errors.studentName && (
+                  <p className="text-sm text-destructive">{errors.studentName}</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="studentClass" className="flex items-center gap-2 text-base">
+                  <GraduationCap className="w-4 h-4 text-accent" />
+                  Kelas (Opsional)
+                </Label>
+                <Input
+                  id="studentClass"
+                  placeholder="Contoh: XII IPA 1"
+                  value={formData.studentClass}
+                  onChange={(e) =>
+                    setFormData({ ...formData, studentClass: e.target.value })
+                  }
+                  className={`py-6 text-base border-2 transition-all duration-300 focus:border-accent hover:border-accent/50 ${errors.studentClass ? "border-destructive" : ""}`}
+                />
+                {errors.studentClass && (
+                  <p className="text-sm text-destructive">{errors.studentClass}</p>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="studentClass">Kelas (Opsional)</Label>
-              <Input
-                id="studentClass"
-                placeholder="Contoh: XII IPA 1"
-                value={formData.studentClass}
-                onChange={(e) =>
-                  setFormData({ ...formData, studentClass: e.target.value })
-                }
-                className={errors.studentClass ? "border-destructive" : ""}
-              />
-              {errors.studentClass && (
-                <p className="text-sm text-destructive">{errors.studentClass}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">
+            <div className="space-y-3">
+              <Label htmlFor="content" className="flex items-center gap-2 text-base">
+                <FileText className="w-4 h-4 text-secondary" />
                 Aspirasi <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="content"
-                placeholder="Tuliskan aspirasi Anda di sini..."
+                placeholder="Tuliskan aspirasi Anda di sini dengan jelas dan detail..."
                 rows={8}
                 value={formData.content}
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
                 }
-                className={errors.content ? "border-destructive" : ""}
+                className={`text-base border-2 transition-all duration-300 focus:border-secondary hover:border-secondary/50 resize-none ${errors.content ? "border-destructive" : ""}`}
               />
-              <p className="text-sm text-muted-foreground">
-                {formData.content.length}/2000 karakter
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {formData.content.length}/2000 karakter
+                </p>
+                {formData.content.length >= 10 && (
+                  <p className="text-sm text-green-500 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Siap dikirim
+                  </p>
+                )}
+              </div>
               {errors.content && (
                 <p className="text-sm text-destructive">{errors.content}</p>
               )}
@@ -168,17 +217,17 @@ const SubmitAspiration = () => {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-primary via-accent to-secondary hover:opacity-90 text-white font-semibold py-6 text-lg shadow-lg"
+              className="w-full bg-gradient-to-r from-primary via-accent to-secondary hover:opacity-90 text-white font-bold py-8 text-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="flex items-center justify-center gap-3">
+                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
                   Mengirim...
                 </span>
               ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <Send className="h-5 w-5" />
+                <span className="flex items-center justify-center gap-3">
+                  <Send className="h-6 w-6" />
                   Kirim Aspirasi Sekarang
                 </span>
               )}

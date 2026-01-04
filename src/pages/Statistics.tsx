@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, TrendingUp, Calendar, Loader2, BarChart3, PieChartIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LineChart,
@@ -38,9 +38,9 @@ const Statistics = () => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!user) {
+    if (!session?.user) {
       navigate("/admin/login");
       return;
     }
@@ -48,7 +48,7 @@ const Statistics = () => {
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id);
+      .eq("user_id", session.user.id);
 
     if (!roles || roles.length === 0) {
       await supabase.auth.signOut();
@@ -126,42 +126,57 @@ const Statistics = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat data statistik...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium">Memuat data statistik...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center gap-4">
+      <div className="container mx-auto px-4 py-8 relative z-10">
+        {/* Header */}
+        <div className="mb-10 flex flex-col md:flex-row md:items-center gap-6 animate-fade-in">
           <Button
             onClick={() => navigate("/admin/dashboard")}
             variant="outline"
-            className="animate-fade-in"
+            className="w-fit border-2 hover:scale-105 transition-all duration-300"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali
           </Button>
           <div className="flex-1">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Statistik Aspirasi
-            </h1>
-            <p className="text-muted-foreground">Analisis tren dan pola aspirasi siswa</p>
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                  Statistik Aspirasi
+                </h1>
+                <p className="text-muted-foreground">Analisis tren dan pola aspirasi siswa</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        {/* View Mode Toggle */}
+        <div className="flex gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Button
             onClick={() => setViewMode("week")}
             variant={viewMode === "week" ? "default" : "outline"}
-            className="animate-fade-in"
+            className={`transition-all duration-300 hover:scale-105 ${viewMode === "week" ? "shadow-lg" : ""}`}
           >
             <Calendar className="mr-2 h-4 w-4" />
             Per Minggu
@@ -169,18 +184,21 @@ const Statistics = () => {
           <Button
             onClick={() => setViewMode("month")}
             variant={viewMode === "month" ? "default" : "outline"}
-            className="animate-fade-in"
-            style={{ animationDelay: "0.1s" }}
+            className={`transition-all duration-300 hover:scale-105 ${viewMode === "month" ? "shadow-lg" : ""}`}
           >
             <TrendingUp className="mr-2 h-4 w-4" />
             Per Bulan
           </Button>
         </div>
 
-        <div className="grid gap-6 mb-6">
-          <Card className="p-6 animate-fade-in shadow-lg">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-primary" />
+        {/* Charts Grid */}
+        <div className="grid gap-8 mb-8">
+          {/* Line Chart */}
+          <Card className="p-8 animate-fade-in shadow-xl border-2 border-primary/20 bg-card/80 backdrop-blur-md hover:shadow-2xl transition-all duration-500" style={{ animationDelay: '0.2s' }}>
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
               Tren Aspirasi {viewMode === "week" ? "Mingguan" : "Bulanan"}
             </h2>
             <ResponsiveContainer width="100%" height={400}>
@@ -194,8 +212,9 @@ const Statistics = () => {
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px"
+                    border: "2px solid hsl(var(--border))",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)"
                   }}
                 />
                 <Legend />
@@ -203,18 +222,24 @@ const Statistics = () => {
                   type="monotone" 
                   dataKey="count" 
                   stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
+                  strokeWidth={4}
                   name="Jumlah Aspirasi"
-                  dot={{ fill: "hsl(var(--primary))", r: 5 }}
-                  activeDot={{ r: 8 }}
+                  dot={{ fill: "hsl(var(--primary))", r: 6, strokeWidth: 2, stroke: "white" }}
+                  activeDot={{ r: 10, stroke: "hsl(var(--primary))", strokeWidth: 3 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6 animate-fade-in shadow-lg" style={{ animationDelay: "0.1s" }}>
-              <h2 className="text-2xl font-bold mb-6">Grafik Batang</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Bar Chart */}
+            <Card className="p-8 animate-fade-in shadow-xl border-2 border-accent/20 bg-card/80 backdrop-blur-md hover:shadow-2xl transition-all duration-500" style={{ animationDelay: '0.3s' }}>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-accent/10">
+                  <BarChart3 className="w-6 h-6 text-accent" />
+                </div>
+                Grafik Batang
+              </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={viewMode === "month" ? getMonthlyData() : getWeeklyData()}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -226,8 +251,8 @@ const Statistics = () => {
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px"
+                      border: "2px solid hsl(var(--border))",
+                      borderRadius: "12px"
                     }}
                   />
                   <Bar 
@@ -240,8 +265,14 @@ const Statistics = () => {
               </ResponsiveContainer>
             </Card>
 
-            <Card className="p-6 animate-fade-in shadow-lg" style={{ animationDelay: "0.2s" }}>
-              <h2 className="text-2xl font-bold mb-6">Status Aspirasi</h2>
+            {/* Pie Chart */}
+            <Card className="p-8 animate-fade-in shadow-xl border-2 border-secondary/20 bg-card/80 backdrop-blur-md hover:shadow-2xl transition-all duration-500" style={{ animationDelay: '0.4s' }}>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary/10">
+                  <PieChartIcon className="w-6 h-6 text-secondary" />
+                </div>
+                Status Aspirasi
+              </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -261,8 +292,8 @@ const Statistics = () => {
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px"
+                      border: "2px solid hsl(var(--border))",
+                      borderRadius: "12px"
                     }}
                   />
                 </PieChart>
