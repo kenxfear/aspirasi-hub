@@ -156,7 +156,7 @@ const AdminLogin = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/admin/callback`,
+          redirectTo: `${window.location.origin}/admin/login`,
         },
       });
 
