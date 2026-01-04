@@ -16,36 +16,47 @@ const AdminLogin = () => {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Check if already logged in
+    let mounted = true;
+
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await handlePostLogin(session.user, true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && mounted) {
+          await handlePostLogin(session.user, true);
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        if (mounted) setIsChecking(false);
       }
-      setIsChecking(false);
     };
 
     checkSession();
 
-    // Listen for auth changes (after Google redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         if (event === "SIGNED_IN" && session?.user) {
-          // Use setTimeout to prevent deadlock
           setTimeout(() => {
-            handlePostLogin(session.user, false);
+            if (mounted) handlePostLogin(session.user, false);
           }, 0);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handlePostLogin = async (user: any, silent: boolean = false) => {
     try {
+      const userEmail = user.email?.toLowerCase();
+      
       // Check if user email is superadmin
-      if (user.email === SUPERADMIN_EMAIL) {
+      if (userEmail === SUPERADMIN_EMAIL.toLowerCase()) {
         // Check if superadmin role exists
         const { data: existingRole } = await supabase
           .from("user_roles")
@@ -55,7 +66,6 @@ const AdminLogin = () => {
           .maybeSingle();
 
         if (!existingRole) {
-          // Add superadmin role
           await supabase.from("user_roles").insert({
             user_id: user.id,
             role: "superadmin" as const,
@@ -68,19 +78,18 @@ const AdminLogin = () => {
             description: "Selamat datang Superadmin!",
           });
         }
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
         return;
       }
 
       // For regular admins, check if their email is registered
-      const { data: adminEmails, error: adminError } = await supabase
+      const { data: adminEmail } = await supabase
         .from("admin_emails" as any)
         .select("email")
-        .eq("email", user.email)
-        .maybeSingle() as any;
+        .eq("email", userEmail)
+        .maybeSingle();
 
-      if (adminError || !adminEmails) {
-        // Not an authorized admin
+      if (!adminEmail) {
         await supabase.auth.signOut();
         if (!silent) {
           toast({
@@ -101,7 +110,6 @@ const AdminLogin = () => {
         .maybeSingle();
 
       if (!existingRole) {
-        // Add admin role
         await supabase.from("user_roles").insert({
           user_id: user.id,
           role: "admin" as const,
@@ -114,7 +122,7 @@ const AdminLogin = () => {
           description: "Selamat datang di panel admin!",
         });
       }
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } catch (error: any) {
       console.error("Post-login error:", error);
       if (!silent) {
