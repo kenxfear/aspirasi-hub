@@ -40,38 +40,105 @@ const AdminDashboard = () => {
   const [showSuperAdminPanel, setShowSuperAdminPanel] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          if (mounted) navigate("/admin/login", { replace: true });
+          return;
+        }
+
+        const userEmail = session.user.email?.toLowerCase();
+        const SUPERADMIN_EMAIL = "kenxfear@gmail.com";
+
+        // Check if superadmin
+        if (userEmail === SUPERADMIN_EMAIL.toLowerCase()) {
+          // Ensure superadmin role exists (create if not)
+          const { data: existingRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("role", "superadmin")
+            .maybeSingle();
+
+          if (!existingRole) {
+            await supabase.from("user_roles").insert({
+              user_id: session.user.id,
+              role: "superadmin" as const,
+            });
+          }
+
+          if (mounted) {
+            setUser(session.user);
+            setUserRole("superadmin");
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Check if registered admin
+        const { data: adminEmail } = await supabase
+          .from("admin_emails" as any)
+          .select("email")
+          .eq("email", userEmail)
+          .maybeSingle();
+
+        if (!adminEmail) {
+          await supabase.auth.signOut();
+          if (mounted) navigate("/admin/login", { replace: true });
+          return;
+        }
+
+        // Ensure admin role exists
+        const { data: existingRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (!existingRole) {
+          await supabase.from("user_roles").insert({
+            user_id: session.user.id,
+            role: "admin" as const,
+          });
+        }
+
+        if (mounted) {
+          setUser(session.user);
+          setUserRole("admin");
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        if (mounted) navigate("/admin/login", { replace: true });
+      }
+    };
+
     checkAuth();
     fetchAspirations();
-  }, []);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+        if (event === "SIGNED_OUT" || !session) {
+          navigate("/admin/login", { replace: true });
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   useEffect(() => {
     filterAspirations();
   }, [searchQuery, aspirations]);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      navigate("/admin/login");
-      return;
-    }
-
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id);
-
-    if (!roles || roles.length === 0) {
-      await supabase.auth.signOut();
-      navigate("/admin/login");
-      return;
-    }
-
-    setUser(session.user);
-    // Prioritize superadmin role if user has both
-    const hasSuperadmin = roles.some(r => r.role === "superadmin");
-    setUserRole(hasSuperadmin ? "superadmin" : roles[0].role);
-  };
 
   const fetchAspirations = async () => {
     try {
