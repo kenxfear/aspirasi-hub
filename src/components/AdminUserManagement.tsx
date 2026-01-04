@@ -5,120 +5,104 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Trash2 } from "lucide-react";
+import { UserPlus, Trash2, Mail } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface AdminEmail {
+  id: string;
+  email: string;
+  created_at: string;
+}
 
 export const AdminUserManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newAdmin, setNewAdmin] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    username: "",
-  });
+  const [newAdminEmail, setNewAdminEmail] = useState("");
 
-  const { data: admins, isLoading } = useQuery({
-    queryKey: ["admins"],
+  // Fetch registered admin emails
+  const { data: adminEmails, isLoading } = useQuery({
+    queryKey: ["admin-emails"],
     queryFn: async () => {
-      const { data: rolesData, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-      
-      if (rolesError) throw rolesError;
-      
-      const adminIds = rolesData?.map(r => r.user_id) || [];
-      
-      if (adminIds.length === 0) return [];
-      
       const { data, error } = await supabase
-        .from("profiles")
+        .from("admin_emails" as any)
         .select("*")
-        .in("id", adminIds);
-      
+        .order("created_at", { ascending: false }) as unknown as { data: AdminEmail[] | null; error: any };
+
       if (error) throw error;
       return data || [];
     },
   });
 
-  const createAdminMutation = useMutation({
-    mutationFn: async () => {
-      // Use regular signup
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: newAdmin.email,
-        password: newAdmin.password,
-        options: {
-          data: {
-            full_name: newAdmin.fullName,
-            username: newAdmin.username,
-          },
-        },
-      });
+  // Add admin email mutation
+  const addEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await supabase
+        .from("admin_emails" as any)
+        .insert({ email: email.toLowerCase().trim() } as any);
 
-      if (signUpError) throw signUpError;
-      if (!signUpData.user) throw new Error("Failed to create user");
-
-      // Add admin role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: signUpData.user.id,
-          role: "admin",
-        });
-
-      if (roleError) throw roleError;
-      return signUpData;
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({
-        title: "Admin Berhasil Dibuat",
-        description: "Admin baru telah ditambahkan. Mereka perlu verifikasi email untuk login pertama kali.",
+        title: "Email Admin Ditambahkan",
+        description: "Email berhasil didaftarkan. Admin dapat login dengan Google menggunakan email tersebut.",
       });
-      setNewAdmin({ email: "", password: "", fullName: "", username: "" });
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
+      setNewAdminEmail("");
+      queryClient.invalidateQueries({ queryKey: ["admin-emails"] });
     },
     onError: (error: any) => {
       toast({
-        title: "Gagal Membuat Admin",
-        description: error.message,
+        title: "Gagal Menambahkan Email",
+        description: error.message?.includes("duplicate") 
+          ? "Email sudah terdaftar." 
+          : error.message,
         variant: "destructive",
       });
     },
   });
 
-  const deleteAdminMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      // First remove the role
-      const { error: roleError } = await supabase
-        .from("user_roles")
+  // Remove admin email mutation
+  const removeEmailMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("admin_emails" as any)
         .delete()
-        .eq("user_id", userId);
-      
-      if (roleError) throw roleError;
+        .eq("id", id);
 
-      // Note: We can't delete the auth user from client side
-      // The user will just lose admin access
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({
-        title: "Admin Dihapus",
-        description: "Admin telah kehilangan akses.",
+        title: "Email Dihapus",
+        description: "Email admin berhasil dihapus.",
       });
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-emails"] });
     },
     onError: (error: any) => {
       toast({
-        title: "Gagal Menghapus Admin",
+        title: "Gagal Menghapus Email",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const handleCreateAdmin = (e: React.FormEvent) => {
+  const handleAddEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    createAdminMutation.mutate();
+    if (!newAdminEmail.trim()) return;
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newAdminEmail)) {
+      toast({
+        title: "Email Tidak Valid",
+        description: "Masukkan alamat email yang valid.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addEmailMutation.mutate(newAdminEmail);
   };
 
   return (
@@ -126,85 +110,70 @@ export const AdminUserManagement = () => {
       <Card className="p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <UserPlus className="w-5 h-5" />
-          Buat Admin Baru
+          Daftarkan Email Admin Baru
         </h2>
-        <form onSubmit={handleCreateAdmin} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+        <p className="text-sm text-muted-foreground mb-4">
+          Email yang didaftarkan dapat login menggunakan Google OAuth.
+        </p>
+        <form onSubmit={handleAddEmail} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Admin</Label>
+            <div className="flex gap-2">
               <Input
                 id="email"
                 type="email"
-                value={newAdmin.email}
-                onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                placeholder="admin@gmail.com"
+                value={newAdminEmail}
+                onChange={(e) => setNewAdminEmail(e.target.value)}
                 required
+                className="flex-1"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={newAdmin.password}
-                onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={newAdmin.username}
-                onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nama Lengkap</Label>
-              <Input
-                id="fullName"
-                value={newAdmin.fullName}
-                onChange={(e) => setNewAdmin({ ...newAdmin, fullName: e.target.value })}
-                required
-              />
+              <Button
+                type="submit"
+                disabled={addEmailMutation.isPending}
+              >
+                {addEmailMutation.isPending ? "Menambahkan..." : "Tambah"}
+              </Button>
             </div>
           </div>
-          <Button
-            type="submit"
-            disabled={createAdminMutation.isPending}
-            className="w-full"
-          >
-            {createAdminMutation.isPending ? "Membuat..." : "Buat Admin"}
-          </Button>
         </form>
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-xl font-bold mb-4">Daftar Admin</h2>
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Mail className="w-5 h-5" />
+          Daftar Email Admin Terdaftar
+        </h2>
         {isLoading ? (
-          <p>Memuat...</p>
-        ) : (
+          <p className="text-muted-foreground">Memuat...</p>
+        ) : adminEmails && adminEmails.length > 0 ? (
           <div className="space-y-2">
-            {admins?.map((admin: any) => (
+            {adminEmails.map((admin) => (
               <div
                 key={admin.id}
                 className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div>
-                  <p className="font-semibold">{admin.full_name}</p>
-                  <p className="text-sm text-muted-foreground">@{admin.username}</p>
+                  <p className="font-medium">{admin.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ditambahkan: {new Date(admin.created_at).toLocaleDateString("id-ID")}
+                  </p>
                 </div>
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={() => deleteAdminMutation.mutate(admin.id)}
-                  disabled={deleteAdminMutation.isPending}
+                  onClick={() => removeEmailMutation.mutate(admin.id)}
+                  disabled={removeEmailMutation.isPending}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             ))}
           </div>
+        ) : (
+          <p className="text-muted-foreground text-center py-4">
+            Belum ada email admin yang terdaftar.
+          </p>
         )}
       </Card>
     </div>

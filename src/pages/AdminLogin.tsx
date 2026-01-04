@@ -1,216 +1,68 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, LogIn, Shield } from "lucide-react";
+import { ArrowLeft, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
-const loginSchema = z.object({
-  email: z.string().trim().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
-
-const SUPERADMIN_EMAIL = "superadmin@aspirasi.com";
-const SUPERADMIN_EXPECTED_PASSWORD = "faspirasp33.";
-const MAX_DAILY_ATTEMPTS = 3;
-
-const getRateLimitKey = () => {
-  const today = new Date().toISOString().split('T')[0];
-  return `superadmin_attempts_${today}`;
-};
-
-const getAttemptCount = (): number => {
-  const key = getRateLimitKey();
-  const stored = localStorage.getItem(key);
-  return stored ? parseInt(stored, 10) : 0;
-};
-
-const incrementAttempt = () => {
-  const key = getRateLimitKey();
-  const current = getAttemptCount();
-  localStorage.setItem(key, String(current + 1));
-};
-
-const isRateLimited = (): boolean => {
-  return getAttemptCount() >= MAX_DAILY_ATTEMPTS;
-};
+const SUPERADMIN_EMAIL = "kenxfear@gmail.com";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [superadminPassword, setSuperadminPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    try {
-      const validated = loginSchema.parse(formData);
-      setIsLoading(true);
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: validated.email,
-        password: validated.password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
+  useEffect(() => {
+    // Check if already logged in
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Check if user has admin or superadmin role
         const { data: roles } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", data.user.id);
+          .eq("user_id", session.user.id);
 
-        if (!roles || roles.length === 0) {
-          await supabase.auth.signOut();
-          toast({
-            title: "Akses Ditolak",
-            description: "Anda tidak memiliki akses sebagai admin.",
-            variant: "destructive",
-          });
-          return;
+        if (roles && roles.length > 0) {
+          navigate("/admin/dashboard");
         }
-
-        toast({
-          title: "Login Berhasil",
-          description: "Selamat datang di panel admin!",
-        });
-        navigate("/admin/dashboard");
       }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-      } else {
-        toast({
-          title: "Login Gagal",
-          description: "Email atau password salah.",
-          variant: "destructive",
-        });
+    };
+
+    checkSession();
+
+    // Listen for auth changes (after Google redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          await handlePostLogin(session.user);
+        }
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    );
 
-  const handleSuperadminLogin = async () => {
-    // Check rate limit first
-    if (isRateLimited()) {
-      toast({
-        title: "Terlalu Banyak Percobaan",
-        description: "Anda sudah mencoba 3 kali hari ini. Coba lagi besok.",
-        variant: "destructive",
-      });
-      return;
-    }
+    return () => subscription.unsubscribe();
+  }, []);
 
-    // Validate password input
-    if (!superadminPassword.trim()) {
-      toast({
-        title: "Input Tidak Valid",
-        description: "Password harus diisi.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Increment attempt count
-    incrementAttempt();
-
-    // Check password first before any auth calls
-    if (superadminPassword !== SUPERADMIN_EXPECTED_PASSWORD) {
-      const remaining = MAX_DAILY_ATTEMPTS - getAttemptCount();
-      toast({
-        title: "Password Salah",
-        description: remaining > 0 
-          ? `Sisa percobaan hari ini: ${remaining}` 
-          : "Anda sudah mencapai batas percobaan hari ini.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handlePostLogin = async (user: any) => {
     try {
-      setIsLoading(true);
-      
-      // Try to sign in with superadmin account
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: SUPERADMIN_EMAIL,
-        password: superadminPassword,
-      });
+      // Check if user email is superadmin
+      if (user.email === SUPERADMIN_EMAIL) {
+        // Check if superadmin role exists
+        const { data: existingRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "superadmin")
+          .single();
 
-      if (signInError) {
-        // If user doesn't exist, create the superadmin account
-        if (signInError.message.includes("Invalid")) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: SUPERADMIN_EMAIL,
-            password: superadminPassword,
-            options: {
-              data: {
-                full_name: "Super Admin",
-                username: "superadmin",
-              },
-            },
-          });
-
-          if (signUpError) throw signUpError;
-
+        if (!existingRole) {
           // Add superadmin role
-          if (signUpData.user) {
-            const { error: roleError } = await supabase
-              .from("user_roles")
-              .insert({
-                user_id: signUpData.user.id,
-                role: "superadmin",
-              });
-
-            if (roleError) throw roleError;
-          }
-
-          toast({
-            title: "Superadmin Dibuat",
-            description: "Akun superadmin berhasil dibuat. Silakan login kembali.",
+          await supabase.from("user_roles").insert({
+            user_id: user.id,
+            role: "superadmin" as const,
           });
-          setSuperadminPassword("");
-          return;
-        }
-        throw signInError;
-      }
-
-      // Verify user has superadmin role
-      if (signInData.user) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", signInData.user.id);
-
-        if (!roles || !roles.some((r) => r.role === "superadmin")) {
-          await supabase.auth.signOut();
-          throw new Error("Akun ini tidak memiliki akses superadmin");
         }
 
         toast({
@@ -218,11 +70,73 @@ const AdminLogin = () => {
           description: "Selamat datang Superadmin!",
         });
         navigate("/admin/dashboard");
+        return;
       }
+
+      // For regular admins, check if their email is registered using raw query
+      const { data: adminEmails, error: adminError } = await supabase
+        .from("admin_emails" as any)
+        .select("email")
+        .eq("email", user.email)
+        .single();
+
+      if (adminError || !adminEmails) {
+        // Not an authorized admin
+        await supabase.auth.signOut();
+        toast({
+          title: "Akses Ditolak",
+          description: "Email Anda tidak terdaftar sebagai admin.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if admin role exists
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      if (!existingRole) {
+        // Add admin role
+        await supabase.from("user_roles").insert({
+          user_id: user.id,
+          role: "admin" as const,
+        });
+      }
+
+      toast({
+        title: "Login Berhasil",
+        description: "Selamat datang di panel admin!",
+      });
+      navigate("/admin/dashboard");
+    } catch (error: any) {
+      console.error("Post-login error:", error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat memproses login.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/admin/login`,
+        },
+      });
+
+      if (error) throw error;
     } catch (error: any) {
       toast({
         title: "Login Gagal",
-        description: error.message || "Terjadi kesalahan. Coba lagi nanti.",
+        description: error.message || "Tidak dapat login dengan Google.",
         variant: "destructive",
       });
     } finally {
@@ -259,93 +173,40 @@ const AdminLogin = () => {
               Admin Login
             </h1>
             <p className="text-muted-foreground">
-              Masuk untuk mengelola aspirasi
+              Login dengan akun Google yang terdaftar
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className={errors.email ? "border-destructive" : ""}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className={errors.password ? "border-destructive" : ""}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-            </div>
-
+          <div className="space-y-6">
             <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-secondary to-accent hover:opacity-90 text-white font-semibold"
+              onClick={handleGoogleLogin}
+              className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-medium py-6"
               disabled={isLoading}
             >
-              {isLoading ? "Memproses..." : "Login"}
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              {isLoading ? "Memproses..." : "Login dengan Google"}
             </Button>
-          </form>
 
-          <div className="mt-6 text-center">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Superadmin Access
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Superadmin Login</DialogTitle>
-                  <DialogDescription>
-                    Masukkan password superadmin untuk akses penuh (maks 3x/hari)
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="superadmin-password">Password Superadmin</Label>
-                    <Input
-                      id="superadmin-password"
-                      type="password"
-                      placeholder="Masukkan password superadmin"
-                      value={superadminPassword}
-                      onChange={(e) => setSuperadminPassword(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Sisa percobaan hari ini: {Math.max(0, MAX_DAILY_ATTEMPTS - getAttemptCount())}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleSuperadminLogin}
-                    className="w-full bg-gradient-to-r from-secondary to-destructive"
-                    disabled={isLoading || isRateLimited()}
-                  >
-                    {isLoading ? "Memproses..." : isRateLimited() ? "Coba Lagi Besok" : "Login Superadmin"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Hanya email yang terdaftar oleh superadmin yang dapat login.</p>
+            </div>
           </div>
         </Card>
       </div>
