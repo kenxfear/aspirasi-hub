@@ -3,9 +3,43 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, Shield, Sparkles, ArrowRight, Star, Zap, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    const checkAndRedirect = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const userEmail = session.user.email?.toLowerCase();
+        const SUPERADMIN_EMAIL = "kenxfear@gmail.com";
+
+        if (userEmail === SUPERADMIN_EMAIL.toLowerCase()) {
+          if (mounted) navigate("/admin/dashboard", { replace: true });
+          return;
+        }
+
+        const { data: adminEmail } = await supabase
+          .from("admin_emails" as any)
+          .select("email")
+          .ilike("email", userEmail || "")
+          .maybeSingle();
+
+        if (adminEmail && mounted) navigate("/admin/dashboard", { replace: true });
+      } catch (e) {
+        // noop
+      }
+    };
+
+    checkAndRedirect();
+
+    return () => { mounted = false; };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">

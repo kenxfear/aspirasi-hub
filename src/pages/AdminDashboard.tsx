@@ -83,7 +83,7 @@ const AdminDashboard = () => {
         const { data: adminEmail } = await supabase
           .from("admin_emails" as any)
           .select("email")
-          .eq("email", userEmail)
+          .ilike("email", userEmail || "")
           .maybeSingle();
 
         if (!adminEmail) {

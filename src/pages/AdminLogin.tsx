@@ -99,7 +99,7 @@ const AdminLogin = () => {
       const { data: adminEmail } = await supabase
         .from("admin_emails" as any)
         .select("email")
-        .eq("email", userEmail)
+        .ilike("email", userEmail || "")
         .maybeSingle();
 
       console.debug("PostLogin: adminEmail lookup result=", adminEmail);
