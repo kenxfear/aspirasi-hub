@@ -41,11 +41,11 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    
+
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!session?.user) {
           if (mounted) navigate("/admin/login", { replace: true });
           return;
@@ -201,48 +201,76 @@ const AdminDashboard = () => {
       });
 
       const doc = new jsPDF('l', 'mm', 'a4');
-      
+
       doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(99, 102, 241);
-      doc.text("REKAP FASPIRA", doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
-      
+      doc.text(
+        "REKAP FASPIRA",
+        doc.internal.pageSize.getWidth() / 2,
+        20,
+        { align: "center" }
+      );
+
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(107, 114, 128);
-      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", {
-        weekday: 'long',
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      })}`, doc.internal.pageSize.getWidth() / 2, 28, { align: "center" });
-      
-      doc.text(`Total Aspirasi: ${filteredAspirations.length}`, doc.internal.pageSize.getWidth() / 2, 34, { align: "center" });
-      
+      doc.text(
+        `Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })}`,
+        doc.internal.pageSize.getWidth() / 2,
+        28,
+        { align: "center" }
+      );
+
+      doc.text(
+        `Total Aspirasi: ${filteredAspirations.length}`,
+        doc.internal.pageSize.getWidth() / 2,
+        34,
+        { align: "center" }
+      );
+
       const tableData = filteredAspirations.map((asp, index) => [
         (index + 1).toString(),
         asp.student_name,
         asp.student_class || "-",
-        asp.content,  // FULL SEND: Masukin semua isi aspirasi, gak ada potong!
-        new Date(asp.created_at).toLocaleDateString("id-ID", { 
-          day: '2-digit',
-          month: '2-digit', 
-          year: 'numeric'
-        }),
-        asp.status.toUpperCase(),
-        // // asp.comments.length.toString()  // Tetep hidden kalo lu mau
+        asp.content,
+        new Date(asp.created_at).toLocaleDateString("id-ID"),
+        new Date(asp.created_at).toLocaleTimeString("id-ID", {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZone: 'Asia/Jakarta'
+        }) // 🔥 WAKTU WIB GANTIN STATUS PENDING
       ]);
+
+      // 🔥 HITUNG BIAR TABEL PAS TENGAH
+      const columnWidths = [15, 35, 25, 100, 28, 30];
+      const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const marginLeft = (pageWidth - tableWidth) / 2;
 
       autoTable(doc, {
         startY: 42,
-        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status" /*, "Komentar" */ ]],
+        head: [[
+          "No",
+          "Nama Siswa",
+          "Kelas",
+          "Isi Aspirasi",
+          "Tanggal",
+          "Waktu (WIB)"
+        ]],
         body: tableData,
         styles: {
           fontSize: 9,
           cellPadding: 4,
-          overflow: 'linebreak',  // Ini jagonya: wrap panjang jadi baris baru otomatis!
+          overflow: 'linebreak',
           cellWidth: 'wrap',
-          minCellHeight: 10,  // Row auto tinggian kalo content panjang, dominate!
+          minCellHeight: 10,
         },
         headStyles: {
           fillColor: [99, 102, 241],
@@ -258,15 +286,14 @@ const AdminDashboard = () => {
           fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 15, halign: 'center' },  // Lebarin No biar nomor ratusan/ribuan muat smooth!
+          0: { cellWidth: 15, halign: 'center' },
           1: { cellWidth: 35 },
           2: { cellWidth: 25, halign: 'center' },
-          3: { cellWidth: 100 },  // Lebarin Isi Aspirasi biar lebih lega, wrap brutal!
+          3: { cellWidth: 100 },
           4: { cellWidth: 28, halign: 'center' },
-          5: { cellWidth: 25, halign: 'center' },
-          // 6: { cellWidth: 25, halign: 'center' }, // Kalo lu uncomment, adjust width total
+          5: { cellWidth: 30, halign: 'center' },
         },
-        margin: { left: 17, right: 17 },  // CENTERED POWER: Simetris kiri-kanan, gak miring lagi!
+        margin: { left: marginLeft, right: marginLeft }, // 💣 CENTER FIX
       });
 
       const pageCount = (doc as any).internal.getNumberOfPages();
@@ -297,29 +324,30 @@ const AdminDashboard = () => {
     }
   };
 
- const handleDeleteAll = async () => {
-  const confirmDelete = window.confirm("YAKIN UNTUK MENGHAPUS SEMUA ASPIRASI?");
-  if (!confirmDelete) return;
 
-  try {
-    toast({ title: "Menghapus..." });
+  const handleDeleteAll = async () => {
+    const confirmDelete = window.confirm("YAKIN UNTUK MENGHAPUS SEMUA ASPIRASI?");
+    if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .rpc('delete_all_aspirations');  // Langsung panggil function brutal
+    try {
+      toast({ title: "Menghapus..." });
 
-    if (error) throw error;
+      const { error } = await supabase
+        .rpc('delete_all_aspirations');  // Langsung panggil function brutal
 
-    toast({ title: "Berhasil Menghapus Semua Aspirasi" });
-    fetchAspirations();  // Refresh data biar UI kosong
-  } catch (err) {
-    console.error(err);
-    toast({ 
-      title: "Gagal Menghapus Semua Aspirasi", 
-      description: "Cek console atau function Supabase-nya wak.", 
-      variant: "destructive" 
-    });
-  }
-};
+      if (error) throw error;
+
+      toast({ title: "Berhasil Menghapus Semua Aspirasi" });
+      fetchAspirations();  // Refresh data biar UI kosong
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Gagal Menghapus Semua Aspirasi",
+        description: "Cek console atau function Supabase-nya wak.",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -342,7 +370,7 @@ const AdminDashboard = () => {
       </div>
 
       <ThemeToggle />
-      
+
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10 animate-fade-in">
@@ -378,7 +406,7 @@ const AdminDashboard = () => {
               </p>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             {/*
             // {userRole === "superadmin" && (
@@ -471,7 +499,7 @@ const AdminDashboard = () => {
             ) : (
               <div className="space-y-6">
                 {filteredAspirations.map((aspiration, index) => (
-                  <div 
+                  <div
                     key={aspiration.id}
                     className="animate-fade-in"
                     style={{ animationDelay: `${index * 0.05}s` }}
