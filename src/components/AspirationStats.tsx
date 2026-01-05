@@ -38,14 +38,14 @@ const AspirationStats = ({ aspirations }: AspirationStatsProps) => {
       bgColor: "bg-primary/10",
       borderColor: "border-primary/20",
     },
-    {
-      label: "Total Komentar",
-      value: totalComments,
-      icon: MessageCircle,
-      color: "text-accent",
-      bgColor: "bg-accent/10",
-      borderColor: "border-accent/20",
-    },
+   // {
+   //   label: "Total Komentar",
+    //  value: totalComments,
+    //  icon: MessageCircle,
+   //   color: "text-accent",
+   //   bgColor: "bg-accent/10",
+   //   borderColor: "border-accent/20",
+  //  },
     {
       label: "Aspirasi Hari Ini",
       value: todayAspirations,
