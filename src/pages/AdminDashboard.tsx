@@ -205,7 +205,7 @@ const AdminDashboard = () => {
       doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(99, 102, 241);
-      doc.text("REKAP ASPIRASI SISWA", doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
+      doc.text("REKAP FASPIRA", doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
       
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
@@ -298,23 +298,23 @@ const AdminDashboard = () => {
   };
 
  const handleDeleteAll = async () => {
-  const confirmDelete = window.confirm("YAKIN HAPUS SEMUA ASPIRASI? PERMANEN BRO, GAK ADA BACKUP!");
+  const confirmDelete = window.confirm("YAKIN UNTUK MENGHAPUS SEMUA ASPIRASI?");
   if (!confirmDelete) return;
 
   try {
-    toast({ title: "Nuklir lagi di-launch... 💣" });
+    toast({ title: "Menghapus..." });
 
     const { error } = await supabase
       .rpc('delete_all_aspirations');  // Langsung panggil function brutal
 
     if (error) throw error;
 
-    toast({ title: "SEMUA ASPIRASI LENYAP DARI MUKA BUMI! 🧨" });
+    toast({ title: "Berhasil Menghapus Semua Aspirasi" });
     fetchAspirations();  // Refresh data biar UI kosong
   } catch (err) {
     console.error(err);
     toast({ 
-      title: "Gagal Nuklir", 
+      title: "Gagal Menghapus Semua Aspirasi", 
       description: "Cek console atau function Supabase-nya wak.", 
       variant: "destructive" 
     });
