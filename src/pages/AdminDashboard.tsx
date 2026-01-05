@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Search, MessageSquare, Users, ShieldCheck, FileText, BarChart3, Loader2 } from "lucide-react";
+import { LogOut, Search, MessageSquare, Users, ShieldCheck, FileText, BarChart3, Loader2, Trash } from "lucide-react";
 import AspirationCard from "@/components/AspirationCard";
 import AspirationStats from "@/components/AspirationStats";
 import { AdminUserManagement } from "@/components/AdminUserManagement";
@@ -230,12 +230,12 @@ const AdminDashboard = () => {
           year: 'numeric'
         }),
         asp.status.toUpperCase(),
-        asp.comments.length.toString()
+        // // asp.comments.length.toString()  // Total komentar disembunyikan
       ]);
 
       autoTable(doc, {
         startY: 42,
-        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status", "Komentar"]],
+        head: [["No", "Nama Siswa", "Kelas", "Isi Aspirasi", "Tanggal", "Status" /*, "Komentar" */ ]],
         body: tableData,
         styles: {
           fontSize: 9,
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
           3: { cellWidth: 90 },
           4: { cellWidth: 28, halign: 'center' },
           5: { cellWidth: 25, halign: 'center' },
-          6: { cellWidth: 25, halign: 'center' },
+          // 6: { cellWidth: 25, halign: 'center' }, // komentar column disembunyikan
         },
         margin: { left: 14, right: 14 },
       });
@@ -334,12 +334,14 @@ const AdminDashboard = () => {
                 <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                   Dashboard Admin
                 </h1>
-                {userRole === "superadmin" && (
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 mt-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white text-sm font-bold shadow-xl">
-                    <ShieldCheck className="w-4 h-4" />
-                    SUPERADMIN
-                  </span>
-                )}
+                {/*
+                // {userRole === "superadmin" && (
+                //   <span className="inline-flex items-center gap-2 px-4 py-1.5 mt-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white text-sm font-bold shadow-xl">
+                //     <ShieldCheck className="w-4 h-4" />
+                //     SUPERADMIN
+                //   </span>
+                // )}
+                */}
               </div>
             </div>
             <p className="text-muted-foreground text-lg ml-20">
@@ -354,16 +356,18 @@ const AdminDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            {userRole === "superadmin" && (
-              <Button
-                onClick={() => setShowSuperAdminPanel(!showSuperAdminPanel)}
-                variant="outline"
-                className="group border-2 border-secondary/50 bg-card/50 backdrop-blur-sm text-secondary hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 hover:scale-105 hover:shadow-xl"
-              >
-                <Users className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                {showSuperAdminPanel ? "Lihat Aspirasi" : "Kelola Admin"}
-              </Button>
-            )}
+            {/*
+            // {userRole === "superadmin" && (
+            //   <Button
+            //     onClick={() => setShowSuperAdminPanel(!showSuperAdminPanel)}
+            //     variant="outline"
+            //     className="group border-2 border-secondary/50 bg-card/50 backdrop-blur-sm text-secondary hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            //   >
+            //     <Users className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+            //     {showSuperAdminPanel ? "Lihat Aspirasi" : "Kelola Admin"}
+            //   </Button>
+            // )}
+            */}
             <Button
               onClick={() => navigate("/admin/statistics")}
               variant="outline"
@@ -378,6 +382,26 @@ const AdminDashboard = () => {
             >
               <FileText className="mr-2 h-5 w-5 group-hover:rotate-6 transition-transform" />
               Download PDF
+            </Button>
+            <Button
+              onClick={async () => {
+                const confirmDelete = window.confirm("Hapus semua aspirasi? Tindakan ini permanen.");
+                if (!confirmDelete) return;
+                try {
+                  toast({ title: "Menghapus semua aspirasi..." });
+                  const { error } = await supabase.from("aspirations").delete().neq("id", "");
+                  if (error) throw error;
+                  toast({ title: "Semua aspirasi dihapus." });
+                  fetchAspirations();
+                } catch (err) {
+                  toast({ title: "Gagal menghapus", description: "Tidak dapat menghapus semua aspirasi.", variant: "destructive" });
+                }
+              }}
+              variant="outline"
+              className="group border-2 border-destructive/50 bg-card/50 backdrop-blur-sm text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            >
+              <Trash className="mr-2 h-5 w-5" />
+              Hapus Semua Aspirasi
             </Button>
             <Button
               onClick={handleLogout}

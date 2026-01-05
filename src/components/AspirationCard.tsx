@@ -223,73 +223,79 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
           </div>
         </div>
 
-        {/* Comments Section */}
-        {aspiration.comments.length > 0 && (
-          <div className="space-y-3 border-t-2 border-border/50 pt-5">
-            <p className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              Komentar Admin ({aspiration.comments.length})
-            </p>
-            <div className="space-y-3">
-              {aspiration.comments.map((comment) => (
-                <div key={comment.id} className="bg-muted/50 p-4 rounded-xl border border-border/50">
-                  <p className="text-sm md:text-base">{comment.comment_text}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {formatDate(comment.created_at)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/*
+        // Comments Section
+        // {aspiration.comments.length > 0 && (
+        //   <div className="space-y-3 border-t-2 border-border/50 pt-5">
+        //     <p className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+        //       <MessageCircle className="w-4 h-4" />
+        //       Komentar Admin ({aspiration.comments.length})
+        //     </p>
+        //     <div className="space-y-3">
+        //       {aspiration.comments.map((comment) => (
+        //         <div key={comment.id} className="bg-muted/50 p-4 rounded-xl border border-border/50">
+        //           <p className="text-sm md:text-base">{comment.comment_text}</p>
+        //           <p className="text-xs text-muted-foreground mt-2">
+        //             {formatDate(comment.created_at)}
+        //           </p>
+        //         </div>
+        //       ))}
+        //     </div>
+        //   </div>
+        // )}
+        */}
 
-        {/* Comment Input */}
-        {isCommenting && (
-          <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border/50 animate-fade-in">
-            <Textarea
-              placeholder="Tulis komentar Anda..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              className="border-2 focus:border-primary transition-colors resize-none"
-            />
-            <div className="flex gap-3">
-              <Button
-                onClick={handleAddComment}
-                disabled={isSubmitting || !comment.trim()}
-                className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                Kirim
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCommenting(false);
-                  setComment("");
-                }}
-              >
-                Batal
-              </Button>
-            </div>
-          </div>
-        )}
+        {/*
+        // Comment Input
+        // {isCommenting && (
+        //   <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border/50 animate-fade-in">
+        //     <Textarea
+        //       placeholder="Tulis komentar Anda..."
+        //       value={comment}
+        //       onChange={(e) => setComment(e.target.value)}
+        //       rows={4}
+        //       className="border-2 focus:border-primary transition-colors resize-none"
+        //     />
+        //     <div className="flex gap-3">
+        //       <Button
+        //         onClick={handleAddComment}
+        //         disabled={isSubmitting || !comment.trim()}
+        //         className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
+        //       >
+        //         {isSubmitting ? (
+        //           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        //         ) : (
+        //           <Send className="mr-2 h-4 w-4" />
+        //         )}
+        //         Kirim
+        //       </Button>
+        //       <Button
+        //         variant="outline"
+        //         onClick={() => {
+        //           setIsCommenting(false);
+        //           setComment("");
+        //         }}
+        //       >
+        //         Batal
+        //       </Button>
+        //     </div>
+        //   </div>
+        // )}
+        */}
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-3">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsCommenting(!isCommenting)}
-            className="border-2 border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent transition-all duration-300 hover:scale-105"
-          >
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {isCommenting ? "Tutup" : "Komentar"}
-          </Button>
+          {/*
+          // <Button
+          //   size="sm"
+          //   variant="outline"
+          //   onClick={() => setIsCommenting(!isCommenting)}
+          //   className="border-2 border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent transition-all duration-300 hover:scale-105"
+          // >
+          //   <MessageCircle className="mr-2 h-4 w-4" />
+          //   {isCommenting ? "Tutup" : "Komentar"}
+          // </Button>
+          */}
           <Button
             size="sm"
             variant="outline"
