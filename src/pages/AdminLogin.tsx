@@ -68,6 +68,26 @@ const AdminLogin = () => {
       const userEmail = user.email?.toLowerCase();
       console.debug("PostLogin: userEmail=", userEmail, "userId=", user.id);
       
+      // Treat users with a 'superadmin' role in `user_roles` as superadmin too
+      const { data: existingSuperRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "superadmin")
+        .maybeSingle();
+
+      if (existingSuperRole) {
+        if (!silent) {
+          toast({
+            title: "Login Berhasil! 🎉",
+            description: "Selamat datang Superadmin!",
+          });
+        }
+        // ensure state and navigate
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+
       // Check if user email is superadmin
       if (userEmail === SUPERADMIN_EMAIL.toLowerCase()) {
         // Check if superadmin role exists
