@@ -223,14 +223,14 @@ const AdminDashboard = () => {
         (index + 1).toString(),
         asp.student_name,
         asp.student_class || "-",
-        asp.content.substring(0, 150) + (asp.content.length > 150 ? "..." : ""),
+        asp.content,  // FULL SEND: Masukin semua isi aspirasi, gak ada potong!
         new Date(asp.created_at).toLocaleDateString("id-ID", { 
           day: '2-digit',
           month: '2-digit', 
           year: 'numeric'
         }),
         asp.status.toUpperCase(),
-        // // asp.comments.length.toString()  // Total komentar disembunyikan
+        // // asp.comments.length.toString()  // Tetep hidden kalo lu mau
       ]);
 
       autoTable(doc, {
@@ -240,9 +240,9 @@ const AdminDashboard = () => {
         styles: {
           fontSize: 9,
           cellPadding: 4,
-          overflow: 'linebreak',
+          overflow: 'linebreak',  // Ini jagonya: wrap panjang jadi baris baru otomatis!
           cellWidth: 'wrap',
-          minCellHeight: 10,
+          minCellHeight: 10,  // Row auto tinggian kalo content panjang, dominate!
         },
         headStyles: {
           fillColor: [99, 102, 241],
@@ -258,15 +258,15 @@ const AdminDashboard = () => {
           fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 12, halign: 'center' },
+          0: { cellWidth: 15, halign: 'center' },  // Lebarin No biar nomor ratusan/ribuan muat smooth!
           1: { cellWidth: 35 },
           2: { cellWidth: 25, halign: 'center' },
-          3: { cellWidth: 90 },
+          3: { cellWidth: 100 },  // Lebarin Isi Aspirasi biar lebih lega, wrap brutal!
           4: { cellWidth: 28, halign: 'center' },
           5: { cellWidth: 25, halign: 'center' },
-          // 6: { cellWidth: 25, halign: 'center' }, // komentar column disembunyikan
+          // 6: { cellWidth: 25, halign: 'center' }, // Kalo lu uncomment, adjust width total
         },
-        margin: { left: 14, right: 14 },
+        margin: { left: 17, right: 17 },  // CENTERED POWER: Simetris kiri-kanan, gak miring lagi!
       });
 
       const pageCount = (doc as any).internal.getNumberOfPages();
@@ -297,34 +297,29 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteAll = async () => {
-    const confirmDelete = window.confirm("Hapus semua aspirasi? Tindakan ini permanen.");
-    if (!confirmDelete) return;
-    try {
-      toast({ title: "Menghapus semua aspirasi..." });
+ const handleDeleteAll = async () => {
+  const confirmDelete = window.confirm("YAKIN HAPUS SEMUA ASPIRASI? PERMANEN BRO, GAK ADA BACKUP!");
+  if (!confirmDelete) return;
 
-      const { data: idsData, error: selectError } = await supabase
-        .from("aspirations")
-        .select("id");
+  try {
+    toast({ title: "Nuklir lagi di-launch... 💣" });
 
-      if (selectError) throw selectError;
+    const { error } = await supabase
+      .rpc('delete_all_aspirations');  // Langsung panggil function brutal
 
-      const ids = (idsData || []).map((r: any) => r.id).filter(Boolean);
+    if (error) throw error;
 
-      if (ids.length === 0) {
-        toast({ title: "Tidak ada aspirasi untuk dihapus." });
-        return;
-      }
-
-      const { error } = await supabase.from("aspirations").delete().in("id", ids);
-      if (error) throw error;
-
-      toast({ title: "Semua aspirasi dihapus." });
-      fetchAspirations();
-    } catch (err) {
-      toast({ title: "Gagal menghapus", description: "Tidak dapat menghapus semua aspirasi.", variant: "destructive" });
-    }
-  };
+    toast({ title: "SEMUA ASPIRASI LENYAP DARI MUKA BUMI! 🧨" });
+    fetchAspirations();  // Refresh data biar UI kosong
+  } catch (err) {
+    console.error(err);
+    toast({ 
+      title: "Gagal Nuklir", 
+      description: "Cek console atau function Supabase-nya wak.", 
+      variant: "destructive" 
+    });
+  }
+};
 
   if (isLoading) {
     return (
