@@ -202,7 +202,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
       <div className="space-y-5">
         {/* Header */}
         <div className="flex justify-between items-start gap-4">
-          <div className="space-y-4 flex-1">
+          <div className="space-y-4 flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary border-0 font-medium">
                 <User className="h-3.5 w-3.5" />
