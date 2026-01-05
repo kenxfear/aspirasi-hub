@@ -168,7 +168,7 @@ const Index = () => {
             ))}
           </div>
           
-          <div className="flex items-center justify-center gap-1 text-muted-foreground/50 text-xs">
+          <div className="flex items-center justify-center gap-1 text-muted-foreground/50 text-xs bold">
             <Star className="w-3 h-3" />
             <span>DIBUAT OLEH MPK SMA NEGERI 1 KENDAL</span>
             <Star className="w-3 h-3" />
