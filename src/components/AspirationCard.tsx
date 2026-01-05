@@ -196,7 +196,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
 
   return (
     <Card 
-      className="p-6 md:p-8 hover:shadow-2xl transition-all duration-500 border-2 border-primary/10 bg-card/80 backdrop-blur-sm hover:border-primary/30 group"
+      className="p-6 md:p-8 hover:shadow-2xl transition-all duration-500 border-2 border-primary/10 bg-card/80 backdrop-blur-sm hover:border-primary/30 group overflow-hidden"
       style={{ animationDelay: `${delay}s` }}
     >
       <div className="space-y-5">
@@ -219,7 +219,7 @@ const AspirationCard = ({ aspiration, onUpdate, delay = 0 }: AspirationCardProps
                 {formatDate(aspiration.created_at)}
               </Badge>
             </div>
-            <p className="text-base md:text-lg leading-relaxed text-foreground/90">{aspiration.content}</p>
+            <p className="text-base md:text-lg leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">{aspiration.content}</p>
           </div>
         </div>
 

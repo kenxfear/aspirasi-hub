@@ -297,6 +297,35 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    const confirmDelete = window.confirm("Hapus semua aspirasi? Tindakan ini permanen.");
+    if (!confirmDelete) return;
+    try {
+      toast({ title: "Menghapus semua aspirasi..." });
+
+      const { data: idsData, error: selectError } = await supabase
+        .from("aspirations")
+        .select("id");
+
+      if (selectError) throw selectError;
+
+      const ids = (idsData || []).map((r: any) => r.id).filter(Boolean);
+
+      if (ids.length === 0) {
+        toast({ title: "Tidak ada aspirasi untuk dihapus." });
+        return;
+      }
+
+      const { error } = await supabase.from("aspirations").delete().in("id", ids);
+      if (error) throw error;
+
+      toast({ title: "Semua aspirasi dihapus." });
+      fetchAspirations();
+    } catch (err) {
+      toast({ title: "Gagal menghapus", description: "Tidak dapat menghapus semua aspirasi.", variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 flex items-center justify-center">
@@ -384,19 +413,7 @@ const AdminDashboard = () => {
               Download PDF
             </Button>
             <Button
-              onClick={async () => {
-                const confirmDelete = window.confirm("Hapus semua aspirasi? Tindakan ini permanen.");
-                if (!confirmDelete) return;
-                try {
-                  toast({ title: "Menghapus semua aspirasi..." });
-                  const { error } = await supabase.from("aspirations").delete().neq("id", "");
-                  if (error) throw error;
-                  toast({ title: "Semua aspirasi dihapus." });
-                  fetchAspirations();
-                } catch (err) {
-                  toast({ title: "Gagal menghapus", description: "Tidak dapat menghapus semua aspirasi.", variant: "destructive" });
-                }
-              }}
+              onClick={handleDeleteAll}
               variant="outline"
               className="group border-2 border-destructive/50 bg-card/50 backdrop-blur-sm text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
