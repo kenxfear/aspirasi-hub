@@ -275,7 +275,7 @@ const AdminDashboard = () => {
         doc.setFontSize(8);
         doc.setTextColor(156, 163, 175);
         doc.text(
-          `Halaman ${i} dari ${pageCount} | Portal Aspirasi Siswa`,
+          `Halaman ${i} dari ${pageCount} | Forum Aspirasi Siswa`,
           doc.internal.pageSize.getWidth() / 2,
           doc.internal.pageSize.getHeight() - 10,
           { align: 'center' }

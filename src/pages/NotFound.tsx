@@ -62,7 +62,7 @@ const NotFound = () => {
 
         <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span>Portal Aspirasi Siswa</span>
+          <span>Forum Aspirasi Siswa</span>
         </div>
       </Card>
     </div>
