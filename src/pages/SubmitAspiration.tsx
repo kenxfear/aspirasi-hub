@@ -228,7 +228,7 @@ const SubmitAspiration = () => {
               ) : (
                 <span className="flex items-center justify-center gap-3">
                   <Send className="h-6 w-6" />
-                  Kirim Aspirasi Sekarang
+                  Kirim
                 </span>
               )}
             </Button>
