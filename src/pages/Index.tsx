@@ -68,7 +68,7 @@ const Index = () => {
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent animate-fade-in leading-tight" style={{ animationDelay: '0.2s' }}>
             FASPIRA
             <br />
-            <span className="text-4xl md:text-6xl lg:text-7xl">Forum Aspirasi Siswa</span>
+            <span className="text-4xl md:text-6xl lg:text-7xl">Forum Aspirasi Siswa SMANIK</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -122,7 +122,7 @@ const Index = () => {
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           {[
             { icon: Shield, title: "100% Anonim", desc: "Identitas Anda tetap terjaga", color: "text-green-500", bg: "bg-green-500/10" },
-            { icon: Zap, title: "Respon Cepat", desc: "Aspirasi Pasti Di Dengar", color: "text-blue-500", bg: "bg-blue-500/10" },
+            { icon: Zap, title: "Pasti Di Respon", desc: "Aspirasi Pasti Di Dengar", color: "text-blue-500", bg: "bg-blue-500/10" },
             { icon: Heart, title: "Dipedulikan", desc: "Setiap suara sangat berarti", color: "text-pink-500", bg: "bg-pink-500/10" },
           ].map((feature, index) => (
             <Card 
