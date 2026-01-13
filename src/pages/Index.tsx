@@ -62,13 +62,13 @@ const Index = () => {
         <div className="text-center mb-20 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Platform Aspirasi Modern</span>
+            <span className="text-sm font-medium text-primary">SMA NEGERI 1 KENDAL</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent animate-fade-in leading-tight" style={{ animationDelay: '0.2s' }}>
             FASPIRA
             <br />
-            <span className="text-4xl md:text-6xl lg:text-7xl">Forum Aspirasi Siswa SMANIK</span>
+            <span className="text-4xl md:text-6xl lg:text-7xl">Forum Aspirasi Siswa</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -159,7 +159,7 @@ const Index = () => {
             {[
               { color: "bg-green-500", label: "100% Anonim" },
               { color: "bg-blue-500", label: "Data Terenkripsi" },
-              { color: "bg-purple-500", label: "Respon Cepat" },
+              { color: "bg-purple-500", label: "Pasti Di Respon" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2 group">
                 <div className={`w-3 h-3 rounded-full ${item.color} animate-pulse group-hover:scale-125 transition-transform`} />
